@@ -12,8 +12,8 @@ using testback.Data;
 namespace testback.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20250301141728_MigracionGeneral")]
-    partial class MigracionGeneral
+    [Migration("20250306175954_RemoveColumnsFromEmpleados")]
+    partial class RemoveColumnsFromEmpleados
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -41,17 +41,6 @@ namespace testback.Migrations
                         .IsRequired()
                         .HasColumnType("longtext");
 
-                    b.Property<string>("Comentarios")
-                        .HasColumnType("longtext");
-
-                    b.Property<DateTime?>("FechaHoraEntrada")
-                        .HasColumnType("datetime(6)")
-                        .HasColumnName("fecha_hora_entrada");
-
-                    b.Property<DateTime?>("FechaHoraSalida")
-                        .HasColumnType("datetime(6)")
-                        .HasColumnName("fecha_hora_salida");
-
                     b.Property<string>("NombreCompleto")
                         .IsRequired()
                         .HasColumnType("longtext");
@@ -59,10 +48,6 @@ namespace testback.Migrations
                     b.Property<string>("Obra")
                         .IsRequired()
                         .HasColumnType("longtext");
-
-                    b.Property<string>("PermisosEspeciales")
-                        .HasColumnType("longtext")
-                        .HasColumnName("permisos_especiales");
 
                     b.Property<string>("Responsable")
                         .IsRequired()
@@ -119,6 +104,10 @@ namespace testback.Migrations
                         .HasColumnType("longtext")
                         .HasColumnName("cliente_obra");
 
+                    b.Property<decimal>("CostoObra")
+                        .HasColumnType("decimal(65,30)")
+                        .HasColumnName("costo_obra");
+
                     b.Property<string>("NombreObra")
                         .IsRequired()
                         .HasColumnType("longtext")
@@ -131,6 +120,47 @@ namespace testback.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Obra");
+                });
+
+            modelBuilder.Entity("tiemposg", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Comentarios")
+                        .HasColumnType("longtext");
+
+                    b.Property<int>("EmpleadoId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("FechaHoraEntrada")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<DateTime?>("FechaHoraSalida")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("PermisosEspeciales")
+                        .HasColumnType("longtext");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("EmpleadoId");
+
+                    b.ToTable("tiemposg");
+                });
+
+            modelBuilder.Entity("tiemposg", b =>
+                {
+                    b.HasOne("Empleado", "Empleado")
+                        .WithMany()
+                        .HasForeignKey("EmpleadoId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Empleado");
                 });
 #pragma warning restore 612, 618
         }

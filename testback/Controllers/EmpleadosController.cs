@@ -16,7 +16,6 @@ namespace testback.Controllers
             _context = context;
         }
 
-        // GET: api/Empleados
         [HttpGet]
         public async Task<IActionResult> GetEmpleados()
         {
@@ -24,7 +23,6 @@ namespace testback.Controllers
             return _context.Empleado != null ? Ok(empleados) : Problem("Entity set 'ApplicationDbContext.Empleado' is null.");
         }
 
-        // GET: api/Empleados/5
         [HttpGet("{id}")]
         public async Task<IActionResult> GetEmpleado(int? id)
         {
@@ -42,9 +40,8 @@ namespace testback.Controllers
             return Ok(empleado);
         }
 
-        // POST: api/Empleados
         [HttpPost]
-        public async Task<IActionResult> CreateEmpleado([Bind("Id,Cedula,NombreCompleto,Cargo,Obra,Responsable,FechaHoraEntrada,FechaHoraSalida,Comentarios,PermisosEspeciales")] Empleado empleado)
+        public async Task<IActionResult> CreateEmpleado([Bind("Id,Cedula,NombreCompleto,Cargo,Obra,Responsable")] Empleado empleado)
         {
             if (ModelState.IsValid)
             {
@@ -55,9 +52,8 @@ namespace testback.Controllers
             return BadRequest(ModelState);
         }
 
-        // PUT: api/Empleados/5
         [HttpPut("{id}")]
-        public async Task<IActionResult> EditEmpleado(int id, [Bind("Id,Cedula,NombreCompleto,Cargo,Obra,Responsable,FechaHoraEntrada,FechaHoraSalida,Comentarios,PermisosEspeciales")] Empleado empleado)
+        public async Task<IActionResult> EditEmpleado(int id, [Bind("Id,Cedula,NombreCompleto,Cargo,Obra,Responsable")] Empleado empleado)
         {
             if (id != empleado.Id)
             {
@@ -87,7 +83,6 @@ namespace testback.Controllers
             return BadRequest(ModelState);
         }
 
-        // DELETE: api/Empleados/5
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteEmpleado(int id)
         {

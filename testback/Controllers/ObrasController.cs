@@ -16,7 +16,6 @@ namespace testback.Controllers
             _context = context;
         }
 
-        // GET: api/Obras
         [HttpGet]
         public async Task<IActionResult> GetObras()
         {
@@ -24,7 +23,6 @@ namespace testback.Controllers
             return _context.Obra != null ? Ok(obras) : Problem("Entity set 'ApplicationDbContext.Obra' is null.");
         }
 
-        // GET: api/Obras/5
         [HttpGet("{id}")]
         public async Task<IActionResult> GetObra(int? id)
         {
@@ -42,9 +40,8 @@ namespace testback.Controllers
             return Ok(obra);
         }
 
-        // POST: api/Obras
         [HttpPost]
-        public async Task<IActionResult> CreateObra([Bind("Id,NombreObra,Responsable,ClienteObra")] Obra obra)
+        public async Task<IActionResult> CreateObra([Bind("Id,NombreObra,Responsable,ClienteObra,CostoObra")] Obra obra)
         {
             if (ModelState.IsValid)
             {
@@ -55,9 +52,8 @@ namespace testback.Controllers
             return BadRequest(ModelState);
         }
 
-        // PUT: api/Obras/5
         [HttpPut("{id}")]
-        public async Task<IActionResult> EditObra(int id, [Bind("Id,NombreObra,Responsable,ClienteObra")] Obra obra)
+        public async Task<IActionResult> EditObra(int id, [Bind("Id,NombreObra,Responsable,ClienteObra,CostoObra")] Obra obra)
         {
             if (id != obra.Id)
             {
@@ -87,7 +83,6 @@ namespace testback.Controllers
             return BadRequest(ModelState);
         }
 
-        // DELETE: api/Obras/5
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteObra(int id)
         {

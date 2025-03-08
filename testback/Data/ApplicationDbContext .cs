@@ -12,6 +12,8 @@ namespace testback.Data
         public DbSet<Empleado> Empleado { get; set; }
         public DbSet<Obra> Obra { get; set; }
         public DbSet<Usuario> Usuario { get; set; }
+        public DbSet<tiemposg> tiemposg { get; set; }
+
 
         protected override void OnModelCreating(ModelBuilder builder)
         {

@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations.Schema;
+using System.ComponentModel.DataAnnotations;
 
 namespace testback.Models
 {
@@ -13,6 +14,9 @@ namespace testback.Models
 
         [Column("cliente_obra")]
         public string ClienteObra { get; set; }
+
+        [Column("costo_obra")]
+        [DataType(DataType.Currency)]
+        public decimal CostoObra { get; set; }
     }
 }
-

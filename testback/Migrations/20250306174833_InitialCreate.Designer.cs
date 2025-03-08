@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using testback.Data;
 
@@ -11,9 +12,11 @@ using testback.Data;
 namespace testback.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250306174833_InitialCreate")]
+    partial class InitialCreate
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -38,6 +41,17 @@ namespace testback.Migrations
                         .IsRequired()
                         .HasColumnType("longtext");
 
+                    b.Property<string>("Comentarios")
+                        .HasColumnType("longtext");
+
+                    b.Property<DateTime?>("FechaHoraEntrada")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnName("fecha_hora_entrada");
+
+                    b.Property<DateTime?>("FechaHoraSalida")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnName("fecha_hora_salida");
+
                     b.Property<string>("NombreCompleto")
                         .IsRequired()
                         .HasColumnType("longtext");
@@ -45,6 +59,10 @@ namespace testback.Migrations
                     b.Property<string>("Obra")
                         .IsRequired()
                         .HasColumnType("longtext");
+
+                    b.Property<string>("PermisosEspeciales")
+                        .HasColumnType("longtext")
+                        .HasColumnName("permisos_especiales");
 
                     b.Property<string>("Responsable")
                         .IsRequired()
