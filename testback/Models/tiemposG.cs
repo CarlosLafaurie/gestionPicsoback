@@ -15,5 +15,4 @@ public class tiemposg
     public string? Comentarios { get; set; }
     public string? PermisosEspeciales { get; set; }
 
-    public virtual Empleado Empleado { get; set; }
 }

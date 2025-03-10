@@ -49,6 +49,31 @@ namespace testback.Controllers
             return CreatedAtAction(nameof(GetTiempoG), new { id = tiempoG.Id }, tiempoG);
         }
 
+        [HttpPost("bulk")]
+        public async Task<IActionResult> CreateMultipleTiempos([FromBody] List<tiemposg> tiempos)
+        {
+            if (tiempos == null || tiempos.Count == 0)
+            {
+                return BadRequest("La lista de tiempos no puede estar vacía.");
+            }
+
+            foreach (var tiempo in tiempos)
+            {
+                // Verifica si el empleado existe en la base de datos antes de guardar el tiempo
+                var empleadoExistente = await _context.Empleado.FindAsync(tiempo.EmpleadoId);
+                if (empleadoExistente == null)
+                {
+                    return BadRequest($"El empleado con ID {tiempo.EmpleadoId} no existe.");
+                }
+            }
+
+            _context.tiemposg.AddRange(tiempos);
+            await _context.SaveChangesAsync();
+
+            return Ok(tiempos);
+        }
+
+
         [HttpPut("{id}")]
         public async Task<IActionResult> EditTiempoG(int id, tiemposg tiempoG)
         {
