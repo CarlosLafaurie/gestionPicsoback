@@ -38,6 +38,10 @@ namespace testback.Migrations
                         .IsRequired()
                         .HasColumnType("longtext");
 
+                    b.Property<string>("Estado")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
                     b.Property<string>("NombreCompleto")
                         .IsRequired()
                         .HasColumnType("longtext");
@@ -50,12 +54,97 @@ namespace testback.Migrations
                         .IsRequired()
                         .HasColumnType("longtext");
 
+                    b.Property<string>("ResponsableSecundario")
+                        .HasColumnType("longtext");
+
+                    b.Property<decimal>("Salario")
+                        .HasColumnType("decimal(18,2)");
+
                     b.HasKey("Id");
 
                     b.ToTable("Empleado");
                 });
 
-            modelBuilder.Entity("Usuario", b =>
+            modelBuilder.Entity("testback.Models.IngresosPersonal", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Comentarios")
+                        .HasColumnType("longtext");
+
+                    b.Property<int>("EmpleadoId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("FechaHoraEntrada")
+                        .HasColumnType("datetime(6)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("IngresosPersonal");
+                });
+
+            modelBuilder.Entity("testback.Models.Obra", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("ClienteObra")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<decimal>("CostoObra")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("Estado")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("NombreObra")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("Responsable")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("ResponsableSecundario")
+                        .HasColumnType("longtext");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Obra");
+                });
+
+            modelBuilder.Entity("testback.Models.SalidasPersonal", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Comentarios")
+                        .HasColumnType("longtext");
+
+                    b.Property<int>("EmpleadoId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("FechaHoraSalida")
+                        .HasColumnType("datetime(6)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("SalidasPersonal");
+                });
+
+            modelBuilder.Entity("testback.Models.Usuario", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -71,9 +160,14 @@ namespace testback.Migrations
                         .IsRequired()
                         .HasColumnType("longtext");
 
-                    b.Property<string>("Contrasena")
+                    b.Property<string>("ContrasenaHash")
                         .IsRequired()
                         .HasColumnType("longtext");
+
+                    b.Property<string>("Estado")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("varchar(10)");
 
                     b.Property<string>("NombreCompleto")
                         .IsRequired()
@@ -83,81 +177,13 @@ namespace testback.Migrations
                         .IsRequired()
                         .HasColumnType("longtext");
 
+                    b.Property<string>("Rol")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
                     b.HasKey("Id");
 
                     b.ToTable("Usuario");
-                });
-
-            modelBuilder.Entity("testback.Models.Obra", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("ClienteObra")
-                        .IsRequired()
-                        .HasColumnType("longtext")
-                        .HasColumnName("cliente_obra");
-
-                    b.Property<decimal>("CostoObra")
-                        .HasColumnType("decimal(65,30)")
-                        .HasColumnName("costo_obra");
-
-                    b.Property<string>("NombreObra")
-                        .IsRequired()
-                        .HasColumnType("longtext")
-                        .HasColumnName("nombre_obra");
-
-                    b.Property<string>("Responsable")
-                        .IsRequired()
-                        .HasColumnType("longtext");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("Obra");
-                });
-
-            modelBuilder.Entity("tiemposg", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Comentarios")
-                        .HasColumnType("longtext");
-
-                    b.Property<int>("EmpleadoId")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime?>("FechaHoraEntrada")
-                        .HasColumnType("datetime(6)");
-
-                    b.Property<DateTime?>("FechaHoraSalida")
-                        .HasColumnType("datetime(6)");
-
-                    b.Property<string>("PermisosEspeciales")
-                        .HasColumnType("longtext");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("EmpleadoId");
-
-                    b.ToTable("tiemposg");
-                });
-
-            modelBuilder.Entity("tiemposg", b =>
-                {
-                    b.HasOne("Empleado", "Empleado")
-                        .WithMany()
-                        .HasForeignKey("EmpleadoId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Empleado");
                 });
 #pragma warning restore 612, 618
         }

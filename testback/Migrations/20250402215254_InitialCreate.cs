@@ -31,10 +31,32 @@ namespace testback.Migrations
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     Responsable = table.Column<string>(type: "longtext", nullable: false)
                         .Annotation("MySql:CharSet", "utf8mb4"),
-                       },
+                    ResponsableSecundario = table.Column<string>(type: "longtext", nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    Salario = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    Estado = table.Column<string>(type: "longtext", nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4")
+                },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Empleado", x => x.Id);
+                })
+                .Annotation("MySql:CharSet", "utf8mb4");
+
+            migrationBuilder.CreateTable(
+                name: "IngresosPersonal",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
+                    EmpleadoId = table.Column<int>(type: "int", nullable: false),
+                    FechaHoraEntrada = table.Column<DateTime>(type: "datetime(6)", nullable: false),
+                    Comentarios = table.Column<string>(type: "longtext", nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4")
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_IngresosPersonal", x => x.Id);
                 })
                 .Annotation("MySql:CharSet", "utf8mb4");
 
@@ -44,17 +66,38 @@ namespace testback.Migrations
                 {
                     Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
-                    nombre_obra = table.Column<string>(type: "longtext", nullable: false)
+                    NombreObra = table.Column<string>(type: "longtext", nullable: false)
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     Responsable = table.Column<string>(type: "longtext", nullable: false)
                         .Annotation("MySql:CharSet", "utf8mb4"),
-                    cliente_obra = table.Column<string>(type: "longtext", nullable: false)
+                    ResponsableSecundario = table.Column<string>(type: "longtext", nullable: true)
                         .Annotation("MySql:CharSet", "utf8mb4"),
-                    costo_obra = table.Column<decimal>(type: "decimal(65,30)", nullable: false)
+                    ClienteObra = table.Column<string>(type: "longtext", nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    CostoObra = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    Estado = table.Column<string>(type: "longtext", nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4")
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Obra", x => x.Id);
+                })
+                .Annotation("MySql:CharSet", "utf8mb4");
+
+            migrationBuilder.CreateTable(
+                name: "SalidasPersonal",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
+                    EmpleadoId = table.Column<int>(type: "int", nullable: false),
+                    FechaHoraSalida = table.Column<DateTime>(type: "datetime(6)", nullable: false),
+                    Comentarios = table.Column<string>(type: "longtext", nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4")
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_SalidasPersonal", x => x.Id);
                 })
                 .Annotation("MySql:CharSet", "utf8mb4");
 
@@ -72,7 +115,11 @@ namespace testback.Migrations
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     Obra = table.Column<string>(type: "longtext", nullable: false)
                         .Annotation("MySql:CharSet", "utf8mb4"),
-                    Contrasena = table.Column<string>(type: "longtext", nullable: false)
+                    Rol = table.Column<string>(type: "longtext", nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    ContrasenaHash = table.Column<string>(type: "longtext", nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    Estado = table.Column<string>(type: "varchar(10)", maxLength: 10, nullable: false)
                         .Annotation("MySql:CharSet", "utf8mb4")
                 },
                 constraints: table =>
@@ -80,53 +127,25 @@ namespace testback.Migrations
                     table.PrimaryKey("PK_Usuario", x => x.Id);
                 })
                 .Annotation("MySql:CharSet", "utf8mb4");
-
-            migrationBuilder.CreateTable(
-                name: "tiemposg",
-                columns: table => new
-                {
-                    Id = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
-                    EmpleadoId = table.Column<int>(type: "int", nullable: false),
-                    FechaHoraEntrada = table.Column<DateTime>(type: "datetime(6)", nullable: true),
-                    FechaHoraSalida = table.Column<DateTime>(type: "datetime(6)", nullable: true),
-                    Comentarios = table.Column<string>(type: "longtext", nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    PermisosEspeciales = table.Column<string>(type: "longtext", nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4")
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_tiemposg", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_tiemposg_Empleado_EmpleadoId",
-                        column: x => x.EmpleadoId,
-                        principalTable: "Empleado",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                })
-                .Annotation("MySql:CharSet", "utf8mb4");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_tiemposg_EmpleadoId",
-                table: "tiemposg",
-                column: "EmpleadoId");
         }
 
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropTable(
+                name: "Empleado");
+
+            migrationBuilder.DropTable(
+                name: "IngresosPersonal");
+
+            migrationBuilder.DropTable(
                 name: "Obra");
 
             migrationBuilder.DropTable(
-                name: "tiemposg");
+                name: "SalidasPersonal");
 
             migrationBuilder.DropTable(
                 name: "Usuario");
-
-            migrationBuilder.DropTable(
-                name: "Empleado");
         }
     }
 }

@@ -16,14 +16,13 @@ namespace testback.Controllers
     public class UsuariosController : ControllerBase
     {
         private readonly ApplicationDbContext _context;
-        private readonly string _secretKey = "YourSecretKeyHere"; // Cambia esto por una clave secreta más segura
+        private readonly string _secretKey = "YourSecretKeyHere";
 
         public UsuariosController(ApplicationDbContext context)
         {
             _context = context;
         }
 
-        // Método de Login
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] LoginRequest loginRequest)
         {
@@ -35,19 +34,16 @@ namespace testback.Controllers
                 return Unauthorized("Usuario no encontrado");
             }
 
-            // Aquí debes verificar la contraseña, por ejemplo, comparando el hash de la contraseña
-            if (usuario.Contrasena != loginRequest.Contrasena)  // Asegúrate de usar un hash para la contraseña en producción
+            if (usuario.ContrasenaHash != loginRequest.Contrasena)  
             {
                 return Unauthorized("Contraseña incorrecta");
             }
 
-            // Crear un JWT token que incluya toda la información del usuario
             var token = GenerateJwtToken(usuario);
 
             return Ok(new { token });
         }
 
-        // Función para generar el JWT
         private string GenerateJwtToken(Usuario usuario)
         {
             var claims = new[]
@@ -55,7 +51,7 @@ namespace testback.Controllers
         new Claim(JwtRegisteredClaimNames.Sub, usuario.Cedula),
         new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
         new Claim(ClaimTypes.Name, usuario.NombreCompleto),
-        new Claim("role", "user"), // Puedes agregar más roles si los usas
+        new Claim("role", usuario.Rol),
         new Claim("id", usuario.Id.ToString()),
         new Claim("cedula", usuario.Cedula),
         new Claim("nombreCompleto", usuario.NombreCompleto),
@@ -152,16 +148,20 @@ namespace testback.Controllers
             {
                 var usuario = await _context.Usuario.FindAsync(id);
 
-                if (usuario != null)
+                if (usuario == null)
                 {
-                    _context.Usuario.Remove(usuario);
+                    return NotFound();
                 }
+
+                usuario.Estado = "Inactivo";
+                _context.Usuario.Update(usuario);
                 await _context.SaveChangesAsync();
+
                 return Ok(usuario);
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                throw;
+                return StatusCode(500, $"Error interno del servidor: {ex.Message}");
             }
         }
 
@@ -171,7 +171,6 @@ namespace testback.Controllers
         }
     }
 
-    // Clase para recibir las credenciales de login
     public class LoginRequest
     {
         public string Cedula { get; set; }

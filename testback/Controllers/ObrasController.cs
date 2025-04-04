@@ -2,6 +2,8 @@
 using Microsoft.EntityFrameworkCore;
 using testback.Data;
 using testback.Models;
+using System.Threading.Tasks;
+using System.Linq;
 
 namespace testback.Controllers
 {
@@ -19,19 +21,25 @@ namespace testback.Controllers
         [HttpGet]
         public async Task<IActionResult> GetObras()
         {
-            var obras = await _context.Obra.OrderByDescending(x => x.Id).ToListAsync();
-            return _context.Obra != null ? Ok(obras) : Problem("Entity set 'ApplicationDbContext.Obra' is null.");
+            if (_context.Obra == null)
+            {
+                return NotFound("No hay obras registradas.");
+            }
+
+            var obras = await _context.Obra
+                .Where(o => o.Estado == "Activo")
+                .OrderByDescending(x => x.Id)
+                .ToListAsync();
+
+            return obras.Any() ? Ok(obras) : NotFound("No hay obras activas.");
         }
 
         [HttpGet("{id}")]
-        public async Task<IActionResult> GetObra(int? id)
+        public async Task<IActionResult> GetObra(int id)
         {
-            if (id == null || _context.Obra == null)
-            {
-                return NotFound();
-            }
+            var obra = await _context.Obra
+                .FirstOrDefaultAsync(m => m.Id == id && m.Estado == "Activo");
 
-            var obra = await _context.Obra.FirstOrDefaultAsync(m => m.Id == id);
             if (obra == null)
             {
                 return NotFound();
@@ -41,66 +49,67 @@ namespace testback.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> CreateObra([Bind("Id,NombreObra,Responsable,ClienteObra,CostoObra")] Obra obra)
+        public async Task<IActionResult> CreateObra(Obra obra)
         {
-            if (ModelState.IsValid)
+            if (!ModelState.IsValid)
             {
-                _context.Add(obra);
-                await _context.SaveChangesAsync();
-                return CreatedAtAction(nameof(GetObra), new { id = obra.Id }, obra);
+                return BadRequest(ModelState);
             }
-            return BadRequest(ModelState);
+
+            obra.Estado = "Activo";
+            _context.Add(obra);
+            await _context.SaveChangesAsync();
+
+            return CreatedAtAction(nameof(GetObra), new { id = obra.Id }, obra);
         }
 
         [HttpPut("{id}")]
-        public async Task<IActionResult> EditObra(int id, [Bind("Id,NombreObra,Responsable,ClienteObra,CostoObra")] Obra obra)
+        public async Task<IActionResult> EditObra(int id, Obra obra)
         {
             if (id != obra.Id)
             {
-                return BadRequest();
+                return BadRequest("El ID no coincide.");
             }
 
-            if (ModelState.IsValid)
+            if (!ModelState.IsValid)
             {
-                try
-                {
-                    _context.Update(obra);
-                    await _context.SaveChangesAsync();
-                }
-                catch (DbUpdateConcurrencyException)
-                {
-                    if (!ObraExists(obra.Id))
-                    {
-                        return NotFound();
-                    }
-                    else
-                    {
-                        throw;
-                    }
-                }
-                return NoContent();
+                return BadRequest(ModelState);
             }
-            return BadRequest(ModelState);
+
+            try
+            {
+                _context.Update(obra);
+                await _context.SaveChangesAsync();
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                if (!ObraExists(obra.Id))
+                {
+                    return NotFound();
+                }
+                else
+                {
+                    throw;
+                }
+            }
+
+            return NoContent();
         }
 
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteObra(int id)
         {
-            try
+            var obra = await _context.Obra.FindAsync(id);
+            if (obra == null)
             {
-                var obra = await _context.Obra.FindAsync(id);
+                return NotFound();
+            }
 
-                if (obra != null)
-                {
-                    _context.Obra.Remove(obra);
-                }
-                await _context.SaveChangesAsync();
-                return Ok(obra);
-            }
-            catch (Exception)
-            {
-                throw;
-            }
+            obra.Estado = "Inactivo";
+            _context.Obra.Update(obra);
+            await _context.SaveChangesAsync();
+
+            return Ok(obra);
         }
 
         private bool ObraExists(int id)
@@ -109,4 +118,3 @@ namespace testback.Controllers
         }
     }
 }
-
