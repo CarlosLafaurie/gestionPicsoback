@@ -14,6 +14,7 @@
             public DbSet<Usuario> Usuario { get; set; }
             public DbSet<IngresosPersonal> IngresosPersonal { get; set; }
             public DbSet<SalidasPersonal> SalidasPersonal { get; set; }
+            public DbSet<DocumentoPermiso> DocumentoPermisos { get; set; }
             protected override void OnModelCreating(ModelBuilder builder)
             {
                 base.OnModelCreating(builder);

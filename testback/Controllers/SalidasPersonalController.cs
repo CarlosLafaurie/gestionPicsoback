@@ -42,10 +42,20 @@ namespace testback.Controllers
                 return BadRequest(ModelState);
             }
 
+            bool fechaDuplicada = await _context.SalidasPersonal
+                .AnyAsync(s => s.EmpleadoId == salida.EmpleadoId &&
+                               s.FechaHoraSalida.Date == salida.FechaHoraSalida.Date);
+
+            if (fechaDuplicada)
+            {
+                return Conflict("Ya existe una salida registrada para este empleado en esa fecha.");
+            }
+
             _context.SalidasPersonal.Add(salida);
             await _context.SaveChangesAsync();
             return CreatedAtAction(nameof(GetSalida), new { id = salida.Id }, salida);
         }
+
 
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdateSalida(int id, SalidasPersonal salida)

@@ -1,5 +1,8 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.FileProviders;
 using testback.Data;
+using Microsoft.Extensions.FileProviders;
+using System.IO;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -31,6 +34,22 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
+
+var docFolder = Path.Combine(builder.Environment.ContentRootPath, "Docspermisos");
+
+if (Directory.Exists(docFolder))
+{
+    app.UseStaticFiles(new StaticFileOptions
+    {
+        FileProvider = new PhysicalFileProvider(docFolder),
+        RequestPath = "/Docspermisos"
+    });
+}
+else
+{
+    Console.WriteLine("? La carpeta Docspermisos no existe: " + docFolder);
+}
+
 
 app.UseHttpsRedirection();
 
