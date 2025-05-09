@@ -1,16 +1,17 @@
-﻿using System.ComponentModel.DataAnnotations;
-using Microsoft.AspNetCore.Http;
+﻿using Microsoft.AspNetCore.Http;
+using System.ComponentModel.DataAnnotations;
 
 namespace testback.Models.Dtos
 {
     public class SubirDocumentoDto
     {
         [Required]
-        public string NombreEmpleado { get; set; } = null!;
+        public string NombreEmpleado { get; set; }
         public string? Comentarios { get; set; }
         [Required]
-        public DateTime FechaHoraEntrada { get; set; }
+        public DateTime FechaInicio { get; set; }
         [Required]
-        public IFormFile Archivo { get; set; }
+        public DateTime FechaFin { get; set; }
+        public IFormFile? Archivo { get; set; }
     }
 }

@@ -10,7 +10,10 @@ namespace testback.Models
         [Required]
         public required string NombreEmpleado { get; set; }
         public string? Comentarios { get; set; }
-        public required DateTime FechaHoraEntrada { get; set; }
+        [Required]
+        public required DateTime FechaInicio { get; set; }
+        [Required]
+        public required DateTime FechaFin { get; set; }
         [Required]
         public required string RutaDocumento { get; set; }
     }

@@ -4,7 +4,6 @@ using testback.Data;
 using testback.Models;
 using testback.Models.Dtos;
 
-
 namespace testback.Controllers
 {
     [ApiController]
@@ -25,30 +24,27 @@ namespace testback.Controllers
             if (dto.Archivo == null || dto.Archivo.Length == 0)
                 return BadRequest("No se recibió ningún archivo");
 
+            if (dto.FechaInicio > dto.FechaFin)
+                return BadRequest("La fecha de inicio no puede ser posterior a la fecha de fin.");
+
             var nombreArchivo = Guid.NewGuid().ToString() + Path.GetExtension(dto.Archivo.FileName);
             var rutaCompleta = Path.Combine(_rutaBase, nombreArchivo);
+            Directory.CreateDirectory(_rutaBase);
 
-            if (!Directory.Exists(_rutaBase))
-            {
-                Directory.CreateDirectory(_rutaBase);
-            }
-
-            using (var stream = new FileStream(rutaCompleta, FileMode.Create))
-            {
-                await dto.Archivo.CopyToAsync(stream);
-            }
+            using var stream = new FileStream(rutaCompleta, FileMode.Create);
+            await dto.Archivo.CopyToAsync(stream);
 
             var documento = new DocumentoPermiso
             {
                 NombreEmpleado = dto.NombreEmpleado,
                 Comentarios = dto.Comentarios,
-                FechaHoraEntrada = dto.FechaHoraEntrada,
+                FechaInicio = dto.FechaInicio,
+                FechaFin = dto.FechaFin,
                 RutaDocumento = rutaCompleta
             };
 
             _context.DocumentoPermisos.Add(documento);
             await _context.SaveChangesAsync();
-
             return Ok(documento);
         }
 

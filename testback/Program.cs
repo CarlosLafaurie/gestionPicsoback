@@ -1,31 +1,38 @@
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.FileProviders;
 using testback.Data;
+using testback.Services;
+using Microsoft.Extensions.Configuration;
 
 var builder = WebApplication.CreateBuilder(args);
 
+builder.Configuration.AddJsonFile("appsettings.json", optional: false, reloadOnChange: true);
+
 builder.Services.AddControllers();
-builder.Services.AddScoped<ApplicationDbContext>();
+builder.Services.AddScoped<CalculadoraJornada>();
+
+builder.Services.AddHttpClient<FestivoApiService>();
+
+string conn = builder.Configuration.GetConnectionString("DefaultConnectionMySQL");
+builder.Services.AddDbContextPool<ApplicationDbContext>(options =>
+    options.UseMySql(conn, ServerVersion.AutoDetect(conn))
+);
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
-
-string _GetConnStringName = builder.Configuration.GetConnectionString("DefaultConnectionMySQL");
-builder.Services.AddDbContextPool<ApplicationDbContext>(options =>
-    options.UseMySql(_GetConnStringName, ServerVersion.AutoDetect(_GetConnStringName)));
-
-
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAngularClient", policy =>
     {
-        policy.WithOrigins("http://localhost:4200") 
+        policy.WithOrigins("http://localhost:4200")
               .AllowAnyHeader()
               .AllowAnyMethod();
     });
 });
 
 var app = builder.Build();
+
+app.UseCors("AllowAngularClient");
 
 if (app.Environment.IsDevelopment())
 {
@@ -34,7 +41,6 @@ if (app.Environment.IsDevelopment())
 }
 
 var docFolder = Path.Combine(builder.Environment.ContentRootPath, "Docspermisos");
-
 if (Directory.Exists(docFolder))
 {
     app.UseStaticFiles(new StaticFileOptions
@@ -43,18 +49,9 @@ if (Directory.Exists(docFolder))
         RequestPath = "/Docspermisos"
     });
 }
-else
-{
-    Console.WriteLine("? La carpeta Docspermisos no existe: " + docFolder);
-}
-
 
 app.UseHttpsRedirection();
-
-app.UseCors("AllowAngularClient");
-
 app.UseAuthorization();
 
 app.MapControllers();
-
 app.Run();

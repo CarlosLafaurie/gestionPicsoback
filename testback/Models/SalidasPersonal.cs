@@ -6,10 +6,10 @@ namespace testback.Models
     public class SalidasPersonal
     {
         [Key]
-        public required int Id { get; set; }
+        public int Id { get; set; }
         [ForeignKey("Empleado")]
-        public required int EmpleadoId { get; set; }
-        public required DateTime FechaHoraSalida { get; set; }
+        public int EmpleadoId { get; set; }
+        public  DateTime FechaHoraSalida { get; set; }
         public string? Comentarios { get; set; }
     }
 }
