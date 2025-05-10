@@ -13,10 +13,11 @@ builder.Services.AddScoped<CalculadoraJornada>();
 
 builder.Services.AddHttpClient<FestivoApiService>();
 
-string conn = builder.Configuration.GetConnectionString("DefaultConnectionMySQL");
+string conn = builder.Configuration.GetConnectionString("DefaultConnection");
 builder.Services.AddDbContextPool<ApplicationDbContext>(options =>
-    options.UseMySql(conn, ServerVersion.AutoDetect(conn))
+    options.UseSqlServer(conn)
 );
+
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
