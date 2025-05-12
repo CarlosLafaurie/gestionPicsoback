@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using testback.Data;
+using testback.Models; 
 
 [ApiController]
 [Route("api/[controller]")]
@@ -41,7 +42,7 @@ public class EmpleadosController : ControllerBase
     }
 
     [HttpPost]
-    public async Task<IActionResult> CreateEmpleado([Bind("Id,Cedula,NombreCompleto,Cargo,Obra,Responsable,ResponsableSecundario,Salario")] Empleado empleado)
+    public async Task<IActionResult> CreateEmpleado([Bind("Id,Cedula,NombreCompleto,Cargo,Obra,Responsable,ResponsableSecundario,Salario,Telefono,NumeroCuenta")] Empleado empleado)
     {
         if (ModelState.IsValid)
         {
@@ -54,7 +55,7 @@ public class EmpleadosController : ControllerBase
     }
 
     [HttpPut("{id}")]
-    public async Task<IActionResult> EditEmpleado(int id, [Bind("Id,Cedula,NombreCompleto,Cargo,Obra,Responsable,ResponsableSecundario,Salario")] Empleado empleado)
+    public async Task<IActionResult> EditEmpleado(int id, [Bind("Id,Cedula,NombreCompleto,Cargo,Obra,Responsable,ResponsableSecundario,Salario,Telefono,NumeroCuenta,Estado")] Empleado empleado)
     {
         if (id != empleado.Id)
         {
