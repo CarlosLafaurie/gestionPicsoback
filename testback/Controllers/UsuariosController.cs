@@ -6,8 +6,6 @@ using System.Security.Claims;
 using System.Text;
 using testback.Data;
 using testback.Models;
-using System.Linq;
-using System.Threading.Tasks;
 
 namespace testback.Controllers
 {
@@ -16,28 +14,27 @@ namespace testback.Controllers
     public class UsuariosController : ControllerBase
     {
         private readonly ApplicationDbContext _context;
-        private readonly string _secretKey = "YourSecretKeyHere";
+        private readonly IConfiguration _configuration;
 
-        public UsuariosController(ApplicationDbContext context)
+        public UsuariosController(ApplicationDbContext context, IConfiguration configuration)
         {
             _context = context;
+            _configuration = configuration;
         }
 
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] LoginRequest loginRequest)
         {
-            var usuario = await _context.Usuario
-                .FirstOrDefaultAsync(u => u.Cedula == loginRequest.Cedula);
+            if (loginRequest == null || string.IsNullOrEmpty(loginRequest.Cedula) || string.IsNullOrEmpty(loginRequest.Contrasena))
+                return BadRequest("Datos de inicio de sesión incompletos.");
+
+            var usuario = await _context.Usuario.FirstOrDefaultAsync(u => u.Cedula == loginRequest.Cedula);
 
             if (usuario == null)
-            {
-                return Unauthorized("Usuario no encontrado");
-            }
+                return Unauthorized("Usuario no encontrado.");
 
-            if (usuario.ContrasenaHash != loginRequest.Contrasena)  
-            {
-                return Unauthorized("Contraseña incorrecta");
-            }
+            if (usuario.ContrasenaHash != loginRequest.Contrasena)
+                return Unauthorized("Contraseña incorrecta.");
 
             var token = GenerateJwtToken(usuario);
 
@@ -48,132 +45,102 @@ namespace testback.Controllers
         {
             var claims = new[]
             {
-        new Claim(JwtRegisteredClaimNames.Sub, usuario.Cedula),
-        new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
-        new Claim(ClaimTypes.Name, usuario.NombreCompleto),
-        new Claim("role", usuario.Rol),
-        new Claim("id", usuario.Id.ToString()),
-        new Claim("cedula", usuario.Cedula),
-        new Claim("nombreCompleto", usuario.NombreCompleto),
-        new Claim("cargo", usuario.Cargo),
-        new Claim("obra", usuario.Obra)
-    };
+                new Claim(JwtRegisteredClaimNames.Sub, usuario.Cedula),
+                new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
+                new Claim(ClaimTypes.Name, usuario.NombreCompleto ?? ""),
+                new Claim("role", usuario.Rol ?? ""),
+                new Claim("id", usuario.Id.ToString()),
+                new Claim("cedula", usuario.Cedula ?? ""),
+                new Claim("nombreCompleto", usuario.NombreCompleto ?? ""),
+                new Claim("cargo", usuario.Cargo ?? ""),
+                new Claim("obra", usuario.Obra ?? "")
+            };
 
-            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_secretKey));
+            var secretKey = _configuration["Jwt:Key"];
+            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey));
             var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
             var token = new JwtSecurityToken(
-                issuer: "YourIssuer",
-                audience: "YourAudience",
+                issuer: _configuration["Jwt:Issuer"],
+                audience: _configuration["Jwt:Audience"],
                 claims: claims,
-                expires: DateTime.Now.AddHours(1),
+                expires: DateTime.UtcNow.AddHours(1),
                 signingCredentials: creds
             );
 
             return new JwtSecurityTokenHandler().WriteToken(token);
         }
 
-
         [HttpGet]
         public async Task<IActionResult> GetUsuarios()
         {
             var usuarios = await _context.Usuario.OrderByDescending(x => x.Id).ToListAsync();
-            return _context.Usuario != null ? Ok(usuarios) : Problem("Entity set 'ApplicationDbContext.Usuario' is null.");
+            return Ok(usuarios);
         }
 
         [HttpGet("{id}")]
-        public async Task<IActionResult> GetUsuario(int? id)
+        public async Task<IActionResult> GetUsuario(int id)
         {
-            if (id == null || _context.Usuario == null)
-            {
-                return NotFound();
-            }
-
-            var usuario = await _context.Usuario.FirstOrDefaultAsync(m => m.Id == id);
-            if (usuario == null)
-            {
-                return NotFound();
-            }
-
-            return Ok(usuario);
+            var usuario = await _context.Usuario.FindAsync(id);
+            return usuario == null ? NotFound() : Ok(usuario);
         }
 
         [HttpPost]
-        public async Task<IActionResult> CreateUsuario([Bind("Id,Cedula,NombreCompleto,Cargo,Obra,Contrasena")] Usuario usuario)
+        public async Task<IActionResult> CreateUsuario([FromBody] Usuario usuario)
         {
-            if (ModelState.IsValid)
-            {
-                _context.Add(usuario);
-                await _context.SaveChangesAsync();
-                return CreatedAtAction(nameof(GetUsuario), new { id = usuario.Id }, usuario);
-            }
-            return BadRequest(ModelState);
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            _context.Usuario.Add(usuario);
+            await _context.SaveChangesAsync();
+            return CreatedAtAction(nameof(GetUsuario), new { id = usuario.Id }, usuario);
         }
 
         [HttpPut("{id}")]
-        public async Task<IActionResult> EditUsuario(int id, [Bind("Id,Cedula,NombreCompleto,Cargo,Obra,Contrasena")] Usuario usuario)
+        public async Task<IActionResult> EditUsuario(int id, [FromBody] Usuario usuario)
         {
             if (id != usuario.Id)
-            {
-                return BadRequest();
-            }
+                return BadRequest("ID inválido.");
 
-            if (ModelState.IsValid)
+            _context.Entry(usuario).State = EntityState.Modified;
+
+            try
             {
-                try
-                {
-                    _context.Update(usuario);
-                    await _context.SaveChangesAsync();
-                }
-                catch (DbUpdateConcurrencyException)
-                {
-                    if (!UsuarioExists(usuario.Id))
-                    {
-                        return NotFound();
-                    }
-                    else
-                    {
-                        throw;
-                    }
-                }
+                await _context.SaveChangesAsync();
                 return NoContent();
             }
-            return BadRequest(ModelState);
+            catch (DbUpdateConcurrencyException)
+            {
+                if (!UsuarioExists(id))
+                    return NotFound();
+                else
+                    throw;
+            }
         }
 
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteUsuario(int id)
         {
-            try
-            {
-                var usuario = await _context.Usuario.FindAsync(id);
+            var usuario = await _context.Usuario.FindAsync(id);
+            if (usuario == null)
+                return NotFound();
 
-                if (usuario == null)
-                {
-                    return NotFound();
-                }
+            usuario.Estado = "Inactivo";
+            _context.Usuario.Update(usuario);
+            await _context.SaveChangesAsync();
 
-                usuario.Estado = "Inactivo";
-                _context.Usuario.Update(usuario);
-                await _context.SaveChangesAsync();
-
-                return Ok(usuario);
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, $"Error interno del servidor: {ex.Message}");
-            }
+            return Ok(usuario);
         }
 
         private bool UsuarioExists(int id)
         {
-            return (_context.Usuario?.Any(e => e.Id == id)).GetValueOrDefault();
+            return _context.Usuario.Any(e => e.Id == id);
         }
-    }
 
-    public class LoginRequest
-    {
-        public string Cedula { get; set; }
-        public string Contrasena { get; set; }
+        public class LoginRequest
+        {
+            public string Cedula { get; set; }
+            public string Contrasena { get; set; }
+        }
     }
 }
