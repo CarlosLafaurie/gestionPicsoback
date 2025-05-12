@@ -56,6 +56,11 @@ namespace testback.Controllers
                 return BadRequest(ModelState);
             }
 
+            if (string.IsNullOrWhiteSpace(obra.Ubicacion))
+            {
+                return BadRequest("La ubicación es requerida.");
+            }
+
             obra.Estado = "Activo";
             _context.Add(obra);
             await _context.SaveChangesAsync();
@@ -74,6 +79,11 @@ namespace testback.Controllers
             if (!ModelState.IsValid)
             {
                 return BadRequest(ModelState);
+            }
+
+            if (string.IsNullOrWhiteSpace(obra.Ubicacion))
+            {
+                return BadRequest("La ubicación es requerida.");
             }
 
             try

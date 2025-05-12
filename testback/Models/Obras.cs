@@ -17,5 +17,7 @@ namespace testback.Models
         public required decimal CostoObra { get; set; }
         [Required]
         public required string Estado { get; set; } = "Activo";
+        [Required]
+        public required string Ubicacion { get; set; }
     }
 }
