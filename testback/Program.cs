@@ -7,21 +7,17 @@ using Microsoft.Extensions.Configuration;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Cargar configuración
 builder.Configuration.AddJsonFile("appsettings.json", optional: false, reloadOnChange: true);
 
-// Registrar servicios
 builder.Services.AddControllers();
 builder.Services.AddScoped<CalculadoraJornada>();
 builder.Services.AddHttpClient<FestivoApiService>();
 
-// DbContext para SQL Server
 string conn = builder.Configuration.GetConnectionString("DefaultConnection");
 builder.Services.AddDbContextPool<ApplicationDbContext>(options =>
     options.UseSqlServer(conn)
 );
 
-// Swagger/OpenAPI
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
@@ -33,13 +29,15 @@ builder.Services.AddSwaggerGen(c =>
     });
 });
 
-// CORS: permitir Angular en localhost
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("AllowAngularClient", policy =>
+    options.AddPolicy("AllowFrontendClients", policy =>
     {
         policy
-            .WithOrigins("http://localhost:4200")
+            .WithOrigins(
+                "http://localhost:4200",
+                "https://lively-meadow-0b592d31e.6.azurestaticapps.net"
+            )
             .AllowAnyHeader()
             .AllowAnyMethod();
     });
@@ -47,21 +45,13 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 
-// Middlware pipeline
-
-// Necesario para que UseCors funcione correctamente
 app.UseRouting();
 
-// Aplicar CORS antes de MapControllers
-app.UseCors("AllowAngularClient");
+app.UseCors("AllowFrontendClients");
 
-// HTTPS
 app.UseHttpsRedirection();
-
-// Autorización (si la usas)
 app.UseAuthorization();
 
-// Swagger siempre disponible en la raíz "/"
 app.UseSwagger();
 app.UseSwaggerUI(c =>
 {
@@ -69,7 +59,6 @@ app.UseSwaggerUI(c =>
     c.RoutePrefix = string.Empty;
 });
 
-// Archivos estáticos para Docspermisos
 var docFolder = Path.Combine(builder.Environment.ContentRootPath, "Docspermisos");
 if (Directory.Exists(docFolder))
 {
@@ -80,7 +69,5 @@ if (Directory.Exists(docFolder))
     });
 }
 
-// Rutas de los controladores
 app.MapControllers();
-
 app.Run();
