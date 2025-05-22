@@ -26,7 +26,7 @@ namespace testback.Services
                 TrabajoFestivo = diasFestivos.Contains(ingreso.FechaHoraEntrada.Date)
             };
 
-            // Definimos descansos diarios (aplican todos los días)
+            // Descansos aplicables todos los días
             var descansos = new List<(TimeSpan inicio, TimeSpan fin)>
             {
                 (new TimeSpan(9, 0, 0), new TimeSpan(9, 30, 0)),   // Desayuno
@@ -40,20 +40,20 @@ namespace testback.Services
 
             while (cursor < salida.FechaHoraSalida)
             {
-                DateTime next = cursor.AddMinutes(30);
+                DateTime next = cursor.AddMinutes(10);
                 if (next > salida.FechaHoraSalida)
                     next = salida.FechaHoraSalida;
 
                 var horaActual = cursor.TimeOfDay;
                 var horaSiguiente = next.TimeOfDay;
 
-                // Verificamos si este bloque se solapa con algún descanso
+                // Verificar si el bloque de 10 minutos está dentro de un descanso
                 bool enDescanso = descansos.Any(d =>
                     horaActual < d.fin && horaSiguiente > d.inicio);
 
                 if (enDescanso)
                 {
-                    cursor = next; // Saltar bloque de descanso
+                    cursor = next;
                     continue;
                 }
 
@@ -73,7 +73,7 @@ namespace testback.Services
                 else
                 {
                     nocturnas += tramoHoras;
-                    // Aquí podrías calcular extras nocturnas si se requiere
+                    // Si deseas calcular extras nocturnas, podrías hacerlo aquí
                 }
 
                 cursor = next;
