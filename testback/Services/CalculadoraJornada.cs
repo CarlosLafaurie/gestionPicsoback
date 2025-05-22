@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using testback.Models;
 
 namespace testback.Services
@@ -25,22 +26,38 @@ namespace testback.Services
                 TrabajoFestivo = diasFestivos.Contains(ingreso.FechaHoraEntrada.Date)
             };
 
-            var totalHoras = (salida.FechaHoraSalida - ingreso.FechaHoraEntrada).TotalHours;
-            reg.HorasTrabajadas = Math.Round(totalHoras, 2);
+            // Definimos descansos diarios (aplican todos los días)
+            var descansos = new List<(TimeSpan inicio, TimeSpan fin)>
+            {
+                (new TimeSpan(9, 0, 0), new TimeSpan(9, 30, 0)),   // Desayuno
+                (new TimeSpan(13, 0, 0), new TimeSpan(14, 0, 0))   // Almuerzo
+            };
 
             double diurnas = 0, nocturnas = 0, extrasDiurnas = 0, extrasNocturnas = 0;
             double acumuladoDiurno = 0;
 
             DateTime cursor = ingreso.FechaHoraEntrada;
+
             while (cursor < salida.FechaHoraSalida)
             {
-                DateTime next = cursor.AddHours(1);
+                DateTime next = cursor.AddMinutes(30);
                 if (next > salida.FechaHoraSalida)
                     next = salida.FechaHoraSalida;
 
-                var tramoHoras = (next - cursor).TotalHours;
                 var horaActual = cursor.TimeOfDay;
+                var horaSiguiente = next.TimeOfDay;
 
+                // Verificamos si este bloque se solapa con algún descanso
+                bool enDescanso = descansos.Any(d =>
+                    horaActual < d.fin && horaSiguiente > d.inicio);
+
+                if (enDescanso)
+                {
+                    cursor = next; // Saltar bloque de descanso
+                    continue;
+                }
+
+                var tramoHoras = (next - cursor).TotalHours;
                 bool esDiurno = horaActual >= InicioDiurno && horaActual < FinDiurno;
 
                 if (esDiurno)
@@ -56,12 +73,13 @@ namespace testback.Services
                 else
                 {
                     nocturnas += tramoHoras;
-                    // En este ejemplo no estamos calculando extras nocturnas por separado
+                    // Aquí podrías calcular extras nocturnas si se requiere
                 }
 
                 cursor = next;
             }
 
+            reg.HorasTrabajadas = Math.Round(diurnas + nocturnas + extrasDiurnas + extrasNocturnas, 2);
             reg.HorasDiurnas = Math.Round(diurnas, 2);
             reg.HorasNocturnas = Math.Round(nocturnas, 2);
             reg.HorasExtrasDiurnas = Math.Round(extrasDiurnas, 2);
