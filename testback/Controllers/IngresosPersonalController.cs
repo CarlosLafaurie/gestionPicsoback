@@ -34,6 +34,20 @@ namespace testback.Controllers
             return Ok(ingreso);
         }
 
+        [HttpGet("ultimo/{empleadoId}")]
+        public async Task<IActionResult> GetUltimoIngresoPorEmpleado(int empleadoId)
+        {
+            var ultimo = await _context.IngresosPersonal
+                .Where(i => i.EmpleadoId == empleadoId)
+                .OrderByDescending(i => i.Id)
+                .FirstOrDefaultAsync();
+
+            if (ultimo == null)
+                return NotFound($"No se encontró ingreso para el empleado con ID {empleadoId}.");
+
+            return Ok(ultimo);
+        }
+
         [HttpPost]
         public async Task<IActionResult> CreateIngreso(IngresosPersonal ingreso)
         {

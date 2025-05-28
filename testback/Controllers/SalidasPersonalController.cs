@@ -34,6 +34,20 @@ namespace testback.Controllers
             return Ok(salida);
         }
 
+        [HttpGet("ultimo/{empleadoId}")]
+        public async Task<IActionResult> GetUltimaSalidaPorEmpleado(int empleadoId)
+        {
+            var ultimo = await _context.SalidasPersonal
+                .Where(s => s.EmpleadoId == empleadoId)
+                .OrderByDescending(s => s.Id)
+                .FirstOrDefaultAsync();
+
+            if (ultimo == null)
+                return NotFound($"No se encontró salida para el empleado con ID {empleadoId}.");
+
+            return Ok(ultimo);
+        }
+
         [HttpPost]
         public async Task<IActionResult> CreateSalida(SalidasPersonal salida)
         {
