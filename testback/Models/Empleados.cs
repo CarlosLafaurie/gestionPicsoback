@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using System;
+using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
 public class Empleado
@@ -12,7 +13,6 @@ public class Empleado
     public string Cargo { get; set; }
     [Required]
     public string Obra { get; set; }
-    [Required]
     public string Responsable { get; set; }
     public string? ResponsableSecundario { get; set; }
     [Column(TypeName = "decimal(18,2)")]
@@ -21,4 +21,6 @@ public class Empleado
     public string Estado { get; set; } = "Activo";
     public string? Telefono { get; set; }
     public string? NumeroCuenta { get; set; }
+    public DateTime FechaInicioContrato { get; set; }
+    public DateTime FechaFinContrato { get; set; }
 }

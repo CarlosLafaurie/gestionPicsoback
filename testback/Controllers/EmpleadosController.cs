@@ -42,7 +42,7 @@ public class EmpleadosController : ControllerBase
     }
 
     [HttpPost]
-    public async Task<IActionResult> CreateEmpleado([Bind("Id,Cedula,NombreCompleto,Cargo,Obra,Responsable,ResponsableSecundario,Salario,Telefono,NumeroCuenta")] Empleado empleado)
+    public async Task<IActionResult> CreateEmpleado([Bind("Id,Cedula,NombreCompleto,Cargo,Obra,Responsable,ResponsableSecundario,Salario,Telefono,NumeroCuenta,FechaInicioContrato,FechaFinContrato")] Empleado empleado)
     {
         if (ModelState.IsValid)
         {
@@ -50,12 +50,12 @@ public class EmpleadosController : ControllerBase
             _context.Add(empleado);
             await _context.SaveChangesAsync();
             return CreatedAtAction(nameof(GetEmpleado), new { id = empleado.Id }, empleado);
-        }
+        }   
         return BadRequest(ModelState);
     }
 
     [HttpPut("{id}")]
-    public async Task<IActionResult> EditEmpleado(int id, [Bind("Id,Cedula,NombreCompleto,Cargo,Obra,Responsable,ResponsableSecundario,Salario,Telefono,NumeroCuenta,Estado")] Empleado empleado)
+    public async Task<IActionResult> EditEmpleado(int id, [Bind("Id,Cedula,NombreCompleto,Cargo,Obra,Responsable,ResponsableSecundario,Salario,Telefono,NumeroCuenta,Estado,FechaInicioContrato,FechaFinContrato")] Empleado empleado)
     {
         if (id != empleado.Id)
         {
