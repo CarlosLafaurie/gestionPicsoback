@@ -81,6 +81,7 @@ namespace testback.Controllers
             {
                 return NotFound();
             }
+
             itemExistente.Codigo = item.Codigo;
             itemExistente.Herramienta = item.Herramienta;
             itemExistente.NumeroSerie = item.NumeroSerie;
@@ -88,6 +89,9 @@ namespace testback.Controllers
             itemExistente.FechaProximoMantenimiento = item.FechaProximoMantenimiento;
             itemExistente.EmpresaMantenimiento = item.EmpresaMantenimiento;
             itemExistente.Observaciones = item.Observaciones;
+            itemExistente.FechaCompra = item.FechaCompra;
+            itemExistente.Proveedor = item.Proveedor;
+            itemExistente.Garantia = item.Garantia;
             itemExistente.Ubicacion = item.Ubicacion;
             itemExistente.Responsable = item.Responsable;
             itemExistente.Estado = item.Estado;
@@ -97,7 +101,6 @@ namespace testback.Controllers
 
             return NoContent();
         }
-
 
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteItem(int id)

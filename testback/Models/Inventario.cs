@@ -16,6 +16,9 @@ namespace testback.Models
         public DateTime? FechaUltimoMantenimiento { get; set; }
         public DateTime? FechaProximoMantenimiento { get; set; }
         public string EmpresaMantenimiento { get; set; } = string.Empty;
+        public DateTime? FechaCompra { get; set; }
+        public string Proveedor { get; set; } = string.Empty;
+        public int Garantia { get; set; } = 0;
         public string Observaciones { get; set; } = string.Empty;
         [Required]
         public string Ubicacion { get; set; } = string.Empty;
