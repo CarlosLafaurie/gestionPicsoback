@@ -118,9 +118,14 @@ namespace testback.Controllers
             return Ok(item);
         }
 
-        private bool ItemExists(int id)
+        [HttpGet("por-obra/{nombreObra}")]
+        public IActionResult ObtenerPorObra(string nombreObra)
         {
-            return (_context.Inventario?.Any(e => e.Id == id)).GetValueOrDefault();
+            var materiales = _context.Inventario
+                .Where(m => m.Ubicacion == nombreObra)
+                .ToList();
+
+            return Ok(materiales);
         }
     }
 }
