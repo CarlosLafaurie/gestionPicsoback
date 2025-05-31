@@ -118,11 +118,11 @@ namespace testback.Controllers
             return Ok(item);
         }
 
-        [HttpGet("por-obra/{nombreObra}")]
-        public IActionResult ObtenerPorObra(string nombreObra)
+        [HttpGet("por-responsable/{nombreResponsable}")]
+        public IActionResult ObtenerPorResponsable(string nombreResponsable)
         {
             var materiales = _context.Inventario
-                .Where(m => m.Ubicacion == nombreObra)
+                .Where(m => m.Responsable.Trim().ToLower() == nombreResponsable.Trim().ToLower())
                 .ToList();
 
             return Ok(materiales);
