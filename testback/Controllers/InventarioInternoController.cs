@@ -61,6 +61,11 @@ namespace testback.Controllers
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
 
+            // Validación explícita
+            var inventarioExists = await _context.Inventario.AnyAsync(i => i.Id == data.InventarioId);
+            if (!inventarioExists)
+                return BadRequest($"No existe Inventario con ID {data.InventarioId}");
+
             _context.InventarioInterno.Add(data);
             await _context.SaveChangesAsync();
 
