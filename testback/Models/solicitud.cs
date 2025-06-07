@@ -10,7 +10,8 @@ namespace testback.Models
     {
         Pendiente, 
         Aprobada,   
-        Rechazada
+        Rechazada,
+        Comprado
     }
     [Table("solicitud")]
     public class Solicitud
