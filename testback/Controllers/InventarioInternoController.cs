@@ -16,7 +16,6 @@ namespace testback.Controllers
             _context = context;
         }
 
-        // Obtener todos los registros
         [HttpGet]
         public async Task<IActionResult> GetInventarioInterno()
         {
@@ -28,7 +27,6 @@ namespace testback.Controllers
             return Ok(inventarioInterno);
         }
 
-        // Obtener por ID
         [HttpGet("{id}")]
         public async Task<IActionResult> GetInventarioInterno(int id)
         {
@@ -42,7 +40,6 @@ namespace testback.Controllers
             return Ok(item);
         }
 
-        // Obtener por obra
         [HttpGet("obra/{obra}")]
         public async Task<IActionResult> GetPorObra(string obra)
         {
@@ -54,14 +51,12 @@ namespace testback.Controllers
             return Ok(items);
         }
 
-        // Crear nuevo registro
         [HttpPost]
         public async Task<IActionResult> CreateInventarioInterno(InventarioInterno data)
         {
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
 
-            // Validación explícita
             var inventarioExists = await _context.Inventario.AnyAsync(i => i.Id == data.InventarioId);
             if (!inventarioExists)
                 return BadRequest($"No existe Inventario con ID {data.InventarioId}");
@@ -72,7 +67,6 @@ namespace testback.Controllers
             return CreatedAtAction(nameof(GetInventarioInterno), new { id = data.Id }, data);
         }
 
-        // Actualizar registro existente
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdateInventarioInterno(int id, InventarioInterno data)
         {
@@ -99,7 +93,6 @@ namespace testback.Controllers
             return NoContent();
         }
 
-        // Eliminar registro
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteInventarioInterno(int id)
         {
