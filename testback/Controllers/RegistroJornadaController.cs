@@ -29,16 +29,42 @@ namespace testback.Controllers
         }
 
         [HttpGet("resumenhoras")]
-        public async Task<ActionResult<IEnumerable<RegistroJornada>>> ObtenerResumenHoras([FromQuery] bool usarFestivos = false)
+        public async Task<ActionResult<IEnumerable<RegistroJornada>>> ObtenerResumenHoras(
+            [FromQuery] bool usarFestivos = false,
+            [FromQuery] DateTime? fechaInicio = null,
+            [FromQuery] DateTime? fechaFin = null)
         {
+            // Obtener datos base
             var empleados = await _context.Empleado.ToListAsync();
             var ingresos = await _context.IngresosPersonal.ToListAsync();
             var salidas = await _context.SalidasPersonal.ToListAsync();
 
+            // Aplicar filtro de rango de fechas si se proporcionan
+            if (fechaInicio.HasValue)
+            {
+                ingresos = ingresos
+                    .Where(i => i.FechaHoraEntrada.Date >= fechaInicio.Value.Date)
+                    .ToList();
+                salidas = salidas
+                    .Where(s => s.FechaHoraSalida.Date >= fechaInicio.Value.Date)
+                    .ToList();
+            }
+            if (fechaFin.HasValue)
+            {
+                ingresos = ingresos
+                    .Where(i => i.FechaHoraEntrada.Date <= fechaFin.Value.Date)
+                    .ToList();
+                salidas = salidas
+                    .Where(s => s.FechaHoraSalida.Date <= fechaFin.Value.Date)
+                    .ToList();
+            }
+
+            // Obtener lista de festivos si aplica
             var festivos = usarFestivos
                 ? await _festivoService.ObtenerFestivosColombia(DateTime.Now.Year)
                 : new List<DateTime>();
 
+            // Calcular registros agrupados
             var resultados = new List<RegistroJornada>();
             var grupos = ingresos.GroupBy(i => new { i.EmpleadoId, Fecha = i.FechaHoraEntrada.Date });
 
