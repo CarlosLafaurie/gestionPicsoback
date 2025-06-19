@@ -17,6 +17,8 @@ public class EmpleadosController : ControllerBase
     [HttpGet]
     public async Task<IActionResult> GetEmpleados(int page = 1, int pageSize = 10)
     {
+        if (pageSize > 500) pageSize = 500;
+
         var empleados = await _context.Empleado
             .Where(e => e.Estado == "Activo")
             .OrderByDescending(x => x.Id)
@@ -26,6 +28,7 @@ public class EmpleadosController : ControllerBase
 
         return Ok(empleados);
     }
+
 
     [HttpGet("{id}")]
     public async Task<IActionResult> GetEmpleado(int id)
