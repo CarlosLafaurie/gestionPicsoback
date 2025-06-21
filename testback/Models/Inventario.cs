@@ -13,6 +13,7 @@ namespace testback.Models
         public string Herramienta { get; set; } = string.Empty;
         [Required]
         public string NumeroSerie { get; set; } = string.Empty;
+        public string Marca { get; set; } = string.Empty;
         public DateTime? FechaUltimoMantenimiento { get; set; }
         public DateTime? FechaProximoMantenimiento { get; set; }
         public string EmpresaMantenimiento { get; set; } = string.Empty;

@@ -85,6 +85,7 @@ namespace testback.Controllers
             itemExistente.Codigo = item.Codigo;
             itemExistente.Herramienta = item.Herramienta;
             itemExistente.NumeroSerie = item.NumeroSerie;
+            itemExistente.Marca = item.Marca;
             itemExistente.FechaUltimoMantenimiento = item.FechaUltimoMantenimiento;
             itemExistente.FechaProximoMantenimiento = item.FechaProximoMantenimiento;
             itemExistente.EmpresaMantenimiento = item.EmpresaMantenimiento;
