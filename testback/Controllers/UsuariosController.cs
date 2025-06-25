@@ -32,9 +32,10 @@ namespace testback.Controllers
 
             if (usuario == null)
                 return Unauthorized("Usuario no encontrado.");
-
-            if (usuario.ContrasenaHash != loginRequest.Contrasena)
+            
+            if (!BCrypt.Net.BCrypt.Verify(loginRequest.Contrasena, usuario.ContrasenaHash))
                 return Unauthorized("Contraseña incorrecta.");
+
 
             var token = GenerateJwtToken(usuario);
 
@@ -90,6 +91,8 @@ namespace testback.Controllers
         {
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
+
+            usuario.ContrasenaHash = BCrypt.Net.BCrypt.HashPassword(usuario.ContrasenaHash);
 
             _context.Usuario.Add(usuario);
             await _context.SaveChangesAsync();
