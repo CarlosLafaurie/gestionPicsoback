@@ -6,7 +6,7 @@ using System.Security.Claims;
 using System.Text;
 using testback.Data;
 using testback.Models;
-using BCrypt.Net;
+using static BCrypt.Net.BCrypt;
 
 namespace testback.Controllers
 {
@@ -33,13 +33,11 @@ namespace testback.Controllers
 
             if (usuario == null)
                 return Unauthorized("Usuario no encontrado.");
-            
-            if (!BCrypt.Net.BCrypt.Verify(loginRequest.Contrasena, usuario.ContrasenaHash))
+
+            if (!Verify(loginRequest.Contrasena, usuario.ContrasenaHash))
                 return Unauthorized("Contraseña incorrecta.");
 
-
             var token = GenerateJwtToken(usuario);
-
             return Ok(new { token });
         }
 
@@ -93,10 +91,10 @@ namespace testback.Controllers
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
 
-            usuario.ContrasenaHash = BCrypt.Net.BCrypt.HashPassword(usuario.ContrasenaHash);
-
+            usuario.ContrasenaHash = HashPassword(usuario.ContrasenaHash);
             _context.Usuario.Add(usuario);
             await _context.SaveChangesAsync();
+
             return CreatedAtAction(nameof(GetUsuario), new { id = usuario.Id }, usuario);
         }
 
@@ -157,7 +155,7 @@ namespace testback.Controllers
             {
                 if (!usuario.ContrasenaHash.StartsWith("$2b$"))
                 {
-                    usuario.ContrasenaHash = BCrypt.Net.BCrypt.HashPassword(usuario.ContrasenaHash);
+                    usuario.ContrasenaHash = HashPassword(usuario.ContrasenaHash);
                     actualizados++;
                 }
             }
