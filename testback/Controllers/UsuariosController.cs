@@ -143,24 +143,5 @@ namespace testback.Controllers
             public string Cedula { get; set; }
             public string Contrasena { get; set; }
         }
-
-        [HttpPut("migrar-hash")]
-        public async Task<IActionResult> MigrarContrasenasAHash()
-        {
-            var usuarios = await _context.Usuario.ToListAsync();
-            int actualizados = 0;
-
-            foreach (var usuario in usuarios)
-            {
-                if (!usuario.ContrasenaHash.StartsWith("$2b$"))
-                {
-                    usuario.ContrasenaHash = BCrypt.Net.BCrypt.HashPassword(usuario.ContrasenaHash);
-                    actualizados++;
-                }
-            }
-
-            await _context.SaveChangesAsync();
-            return Ok($"{actualizados} contraseñas fueron encriptadas correctamente.");
-        }
     }
 }
