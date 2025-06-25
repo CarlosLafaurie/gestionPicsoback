@@ -6,6 +6,7 @@ using System.Security.Claims;
 using System.Text;
 using testback.Data;
 using testback.Models;
+using BCrypt.Net;
 
 namespace testback.Controllers
 {
