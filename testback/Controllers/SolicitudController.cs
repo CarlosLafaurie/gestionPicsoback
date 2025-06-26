@@ -35,23 +35,30 @@
 
                 return Ok(solicitud);
             }
-
         [HttpPost]
-            public async Task<IActionResult> CreateSolicitud([FromBody] Solicitud solicitud)
+        public async Task<IActionResult> CreateSolicitud([FromBody] Solicitud solicitud)
+        {
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            solicitud.FechaSolicitud = DateTime.UtcNow;
+            solicitud.Estado = EstadoSolicitud.Pendiente;
+
+            foreach (var item in solicitud.Items)
             {
-                if (!ModelState.IsValid)
-                    return BadRequest(ModelState);
-
-                solicitud.FechaSolicitud = DateTime.UtcNow;
-                solicitud.Estado = EstadoSolicitud.Pendiente;
-
-                _context.Solicitud.Add(solicitud);
-                await _context.SaveChangesAsync();
-
-                return CreatedAtAction(nameof(GetSolicitudes), new { id = solicitud.Id }, solicitud);
+                _context.Entry(item).State = EntityState.Added;
             }
 
-            [HttpPatch("{id}/estado")]
+            _context.Solicitud.Add(solicitud);
+            await _context.SaveChangesAsync();
+
+            return CreatedAtAction(nameof(GetSolicitudes), new { id = solicitud.Id }, solicitud);
+        }
+
+
+
+
+        [HttpPatch("{id}/estado")]
             public async Task<IActionResult> CambiarEstado(int id, [FromQuery] EstadoSolicitud nuevoEstado)
             {
                 var sol = await _context.Solicitud.FindAsync(id);
@@ -63,9 +70,16 @@
                 sol.Estado = nuevoEstado;
                 _context.Solicitud.Update(sol);
 
-                if (nuevoEstado == EstadoSolicitud.Aprobada)
+            if (nuevoEstado == EstadoSolicitud.Aprobada)
+            {
+                var items = await _context.SolicitudItem
+                    .Where(si => si.SolicitudId == sol.Id)
+                    .Include(si => si.Inventario)
+                    .ToListAsync();
+
+                foreach (var item in items)
                 {
-                    var inv = await _context.Inventario.FindAsync(sol.InventarioId);
+                    var inv = item.Inventario;
                     if (inv != null)
                     {
                         var mov = new Movimiento
@@ -80,15 +94,16 @@
                             Estado = inv.Estado,
                             Comentario = $"Solicitud aprobada #{sol.Id}"
                         };
-                        _context.Movimiento.Add(mov);
 
+                        _context.Movimiento.Add(mov);
                         inv.Responsable = sol.Solicitante;
                         inv.Ubicacion = sol.Obra;
                         _context.Inventario.Update(inv);
                     }
                 }
+            }
 
-                await _context.SaveChangesAsync();
+            await _context.SaveChangesAsync();
                 return NoContent();
             }
         }

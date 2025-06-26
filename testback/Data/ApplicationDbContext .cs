@@ -16,6 +16,7 @@ namespace testback.Data
         public DbSet<SalidasPersonal> SalidasPersonal { get; set; }
         public DbSet<DocumentoPermiso> DocumentoPermisos { get; set; }
         public DbSet<Solicitud> Solicitud { get; set; }
+        public DbSet<SolicitudItem> SolicitudItem { get; set; }
         public DbSet<Movimiento> Movimiento { get; set; }
         public DbSet<Inventario> Inventario { get; set; }
         public DbSet<InventarioInterno> InventarioInterno { get; set; }
