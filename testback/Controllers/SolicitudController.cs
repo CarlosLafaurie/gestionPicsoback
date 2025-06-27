@@ -115,7 +115,7 @@
             catch (Exception ex)
             {
                 // ⛔️ Esto te mostrará en el frontend el verdadero error
-                return StatusCode(500, $"Error interno: {ex.Message}");
+                return StatusCode(500, $"Error interno: {ex.Message} {(ex.InnerException != null ? ex.InnerException.Message : "")}");
             }
         }
 
