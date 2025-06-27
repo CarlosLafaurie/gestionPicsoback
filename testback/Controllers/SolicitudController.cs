@@ -17,14 +17,15 @@
                 _context = context;
             }
 
-            [HttpGet]
-            public async Task<IActionResult> GetSolicitudes()
-            {
-                var list = await _context.Solicitud.ToListAsync();
-                return Ok(list);
-            }
+        [HttpGet]
+        public async Task<IActionResult> GetSolicitudes()
+        {
+            var list = await _context.Solicitud
+                .Include(s => s.Items).ThenInclude(i => i.Inventario).ToListAsync();
+            return Ok(list);
+        }
 
-            [HttpGet("{id}")]
+        [HttpGet("{id}")]
             public async Task<IActionResult> GetSolicitudById(int id)
             {
                 var solicitud = await _context.Solicitud
