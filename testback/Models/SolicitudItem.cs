@@ -28,7 +28,7 @@ namespace testback.Models
         public Inventario? Inventario { get; set; }
 
         [Required]
-        [Column("cantidad")]
+        [Column("Cantidad")]
         public int Cantidad { get; set; }
     }
 }
