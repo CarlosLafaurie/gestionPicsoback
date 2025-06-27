@@ -60,52 +60,58 @@
 
 
         [HttpPatch("{id}/estado")]
-            public async Task<IActionResult> CambiarEstado(int id, [FromQuery] EstadoSolicitud nuevoEstado)
-            {
-                var sol = await _context.Solicitud.FindAsync(id);
-                if (sol == null) return NotFound();
+        public async Task<IActionResult> CambiarEstado(int id, [FromQuery] EstadoSolicitud nuevoEstado)
+        {
+            var sol = await _context.Solicitud
+                .Include(s => s.Items)
+                .ThenInclude(i => i.Inventario)
+                .FirstOrDefaultAsync(s => s.Id == id);
 
-                if (sol.Estado == nuevoEstado)
-                    return BadRequest("Ya está en ese estado.");
+            if (sol == null)
+                return NotFound();
 
-                sol.Estado = nuevoEstado;
-                _context.Solicitud.Update(sol);
+            if (sol.Estado == nuevoEstado)
+                return BadRequest("Ya está en ese estado.");
+
+            sol.Estado = nuevoEstado;
+            _context.Solicitud.Update(sol);
 
             if (nuevoEstado == EstadoSolicitud.Aprobada)
             {
-                var items = await _context.SolicitudItem
-                    .Where(si => si.SolicitudId == sol.Id)
-                    .Include(si => si.Inventario)
-                    .ToListAsync();
-
-                foreach (var item in items)
+                foreach (var item in sol.Items)
                 {
                     var inv = item.Inventario;
-                    if (inv != null)
-                    {
-                        var mov = new Movimiento
-                        {
-                            InventarioId = inv.Id,
-                            CodigoHerramienta = inv.Codigo,
-                            NombreHerramienta = inv.Herramienta,
-                            Responsable = sol.Solicitante,
-                            Obra = sol.Obra,
-                            FechaMovimiento = DateTime.UtcNow,
-                            TipoMovimiento = "Salida",
-                            Estado = inv.Estado,
-                            Comentario = $"Solicitud aprobada #{sol.Id}"
-                        };
 
-                        _context.Movimiento.Add(mov);
-                        inv.Responsable = sol.Solicitante;
-                        inv.Ubicacion = sol.Obra;
-                        _context.Inventario.Update(inv);
+                    if (inv == null)
+                    {
+                        // No se puede hacer movimiento si no hay inventario
+                        // Puedes registrar un log si lo deseas
+                        continue;
                     }
+
+                    var mov = new Movimiento
+                    {
+                        InventarioId = inv.Id,
+                        CodigoHerramienta = inv.Codigo,
+                        NombreHerramienta = inv.Herramienta,
+                        Responsable = sol.Solicitante,
+                        Obra = sol.Obra,
+                        FechaMovimiento = DateTime.UtcNow,
+                        TipoMovimiento = "Salida",
+                        Estado = inv.Estado,
+                        Comentario = $"Solicitud aprobada #{sol.Id}"
+                    };
+
+                    _context.Movimiento.Add(mov);
+
+                    inv.Responsable = sol.Solicitante;
+                    inv.Ubicacion = sol.Obra;
+                    _context.Inventario.Update(inv);
                 }
             }
 
             await _context.SaveChangesAsync();
-                return NoContent();
-            }
+            return NoContent();
         }
     }
+}
