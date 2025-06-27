@@ -57,61 +57,67 @@
         }
 
 
-
-
         [HttpPatch("{id}/estado")]
         public async Task<IActionResult> CambiarEstado(int id, [FromQuery] EstadoSolicitud nuevoEstado)
         {
-            var sol = await _context.Solicitud
-                .Include(s => s.Items)
-                .ThenInclude(i => i.Inventario)
-                .FirstOrDefaultAsync(s => s.Id == id);
-
-            if (sol == null)
-                return NotFound();
-
-            if (sol.Estado == nuevoEstado)
-                return BadRequest("Ya está en ese estado.");
-
-            sol.Estado = nuevoEstado;
-            _context.Solicitud.Update(sol);
-
-            if (nuevoEstado == EstadoSolicitud.Aprobada)
+            try
             {
-                foreach (var item in sol.Items)
+                var sol = await _context.Solicitud
+                    .Include(s => s.Items)
+                    .ThenInclude(i => i.Inventario)
+                    .FirstOrDefaultAsync(s => s.Id == id);
+
+                if (sol == null)
+                    return NotFound();
+
+                if (sol.Estado == nuevoEstado)
+                    return BadRequest("Ya está en ese estado.");
+
+                sol.Estado = nuevoEstado;
+                _context.Solicitud.Update(sol);
+
+                if (nuevoEstado == EstadoSolicitud.Aprobada)
                 {
-                    var inv = item.Inventario;
-
-                    if (inv == null)
+                    foreach (var item in sol.Items)
                     {
-                        // No se puede hacer movimiento si no hay inventario
-                        // Puedes registrar un log si lo deseas
-                        continue;
+                        var inv = item.Inventario;
+
+                        if (inv == null)
+                        {
+                            // Log opcional
+                            continue;
+                        }
+
+                        var mov = new Movimiento
+                        {
+                            InventarioId = inv.Id,
+                            CodigoHerramienta = inv.Codigo,
+                            NombreHerramienta = inv.Herramienta,
+                            Responsable = sol.Solicitante,
+                            Obra = sol.Obra,
+                            FechaMovimiento = DateTime.UtcNow,
+                            TipoMovimiento = "Salida",
+                            Estado = inv.Estado,
+                            Comentario = $"Solicitud aprobada #{sol.Id}"
+                        };
+
+                        _context.Movimiento.Add(mov);
+
+                        inv.Responsable = sol.Solicitante;
+                        inv.Ubicacion = sol.Obra;
+                        _context.Inventario.Update(inv);
                     }
-
-                    var mov = new Movimiento
-                    {
-                        InventarioId = inv.Id,
-                        CodigoHerramienta = inv.Codigo,
-                        NombreHerramienta = inv.Herramienta,
-                        Responsable = sol.Solicitante,
-                        Obra = sol.Obra,
-                        FechaMovimiento = DateTime.UtcNow,
-                        TipoMovimiento = "Salida",
-                        Estado = inv.Estado,
-                        Comentario = $"Solicitud aprobada #{sol.Id}"
-                    };
-
-                    _context.Movimiento.Add(mov);
-
-                    inv.Responsable = sol.Solicitante;
-                    inv.Ubicacion = sol.Obra;
-                    _context.Inventario.Update(inv);
                 }
-            }
 
-            await _context.SaveChangesAsync();
-            return NoContent();
+                await _context.SaveChangesAsync();
+                return NoContent();
+            }
+            catch (Exception ex)
+            {
+                // ⛔️ Esto te mostrará en el frontend el verdadero error
+                return StatusCode(500, $"Error interno: {ex.Message}");
+            }
         }
+
     }
 }
