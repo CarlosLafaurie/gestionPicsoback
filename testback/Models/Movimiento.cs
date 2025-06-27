@@ -1,4 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
+using System.Text.Json.Serialization;
 
 public class Movimiento
 {
@@ -28,7 +30,9 @@ public class Movimiento
 
     [Required]
     public string Estado { get; set; } = string.Empty;
-
+    
+    [Column("Cantidad")]
+    [JsonPropertyName("cantidad")]
     public int Cantidad { get; set; }
 
     public string Comentario { get; set; } = string.Empty;
