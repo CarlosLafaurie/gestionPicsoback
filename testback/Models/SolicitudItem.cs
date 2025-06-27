@@ -1,5 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Text.Json.Serialization;
 
 namespace testback.Models
 {
@@ -14,14 +15,16 @@ namespace testback.Models
         [Column("solicitudId")]
         public int SolicitudId { get; set; }
 
-        [ForeignKey(nameof(SolicitudId))]
+        [ForeignKey("SolicitudId")]
+        [JsonIgnore] 
         public Solicitud? Solicitud { get; set; }
 
         [Required]
         [Column("inventarioId")]
         public int InventarioId { get; set; }
 
-        [ForeignKey(nameof(InventarioId))]
+        [ForeignKey("InventarioId")]
+        [JsonIgnore]
         public Inventario? Inventario { get; set; }
 
         [Required]
