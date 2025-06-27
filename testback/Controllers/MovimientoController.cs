@@ -38,9 +38,7 @@ namespace testback.Controllers
                 .ToListAsync();
 
             if (!movimientos.Any())
-            {
                 return NotFound($"No se encontraron movimientos para la herramienta con código: {codigo}");
-            }
 
             return Ok(movimientos);
         }
@@ -50,9 +48,7 @@ namespace testback.Controllers
         {
             var inventario = await _context.Inventario.FindAsync(movimiento.InventarioId);
             if (inventario == null)
-            {
                 return NotFound("Herramienta no encontrada.");
-            }
 
             movimiento.CodigoHerramienta = inventario.Codigo;
             movimiento.NombreHerramienta = inventario.Herramienta;
@@ -60,6 +56,7 @@ namespace testback.Controllers
 
             _context.Movimiento.Add(movimiento);
 
+            // Actualiza inventario
             inventario.Responsable = movimiento.Responsable;
             inventario.Ubicacion = movimiento.Obra;
             inventario.Estado = movimiento.Estado;
@@ -91,7 +88,9 @@ namespace testback.Controllers
             if (hasta.HasValue)
                 query = query.Where(m => m.FechaMovimiento <= hasta.Value);
 
-            var resultados = await query.OrderByDescending(m => m.FechaMovimiento).ToListAsync();
+            var resultados = await query
+                .OrderByDescending(m => m.FechaMovimiento)
+                .ToListAsync();
 
             return Ok(resultados);
         }
