@@ -41,8 +41,10 @@
         {
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
+       
+            var zonaColombia = TimeZoneInfo.FindSystemTimeZoneById("SA Pacific Standard Time");
+            solicitud.FechaSolicitud = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, zonaColombia);
 
-            solicitud.FechaSolicitud = DateTime.UtcNow;
             solicitud.Estado = EstadoSolicitud.Pendiente;
 
             foreach (var item in solicitud.Items)
