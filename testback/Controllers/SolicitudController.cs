@@ -92,6 +92,27 @@
                         }
 
                         inv.Cantidad -= item.Cantidad;
+                        _context.Inventario.Update(inv);
+
+                        var nuevoInventario = new Inventario
+                        {
+                            Codigo = inv.Codigo,
+                            Herramienta = inv.Herramienta,
+                            NumeroSerie = inv.NumeroSerie,
+                            FechaUltimoMantenimiento = inv.FechaUltimoMantenimiento,
+                            FechaProximoMantenimiento = inv.FechaProximoMantenimiento,
+                            EmpresaMantenimiento = inv.EmpresaMantenimiento,
+                            Observaciones = inv.Observaciones,
+                            Ubicacion = sol.Obra,
+                            Responsable = sol.Solicitante,
+                            Estado = inv.Estado,
+                            Marca = inv.Marca,
+                            Proveedor = inv.Proveedor,
+                            Garantia = inv.Garantia,
+                            FechaCompra = inv.FechaCompra,
+                            Cantidad = item.Cantidad
+                        };
+                        _context.Inventario.Add(nuevoInventario);
 
                         var mov = new Movimiento
                         {
@@ -104,14 +125,10 @@
                             TipoMovimiento = "Salida",
                             Estado = inv.Estado,
                             Comentario = $"Solicitud aprobada #{sol.Id}",
-                            Cantidad = item.Cantidad 
+                            Cantidad = item.Cantidad
                         };
 
                         _context.Movimiento.Add(mov);
-
-                        inv.Responsable = sol.Solicitante;
-                        inv.Ubicacion = sol.Obra;
-                        _context.Inventario.Update(inv);
                     }
                 }
 
