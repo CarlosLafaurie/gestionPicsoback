@@ -83,9 +83,7 @@
                     foreach (var item in sol.Items)
                     {
                         var inv = item.Inventario;
-
-                        if (inv == null)
-                            continue;
+                        if (inv == null) continue;
 
                         if (item.Cantidad > inv.Cantidad)
                         {
@@ -94,18 +92,27 @@
 
                         // 1. Restar cantidad del origen
                         inv.Cantidad -= item.Cantidad;
-
                         if (inv.Cantidad <= 0)
                             _context.Inventario.Remove(inv);
                         else
                             _context.Inventario.Update(inv);
 
-                        // 2. Determinar si tiene código único
-                        bool tieneCodigoUnico = !string.IsNullOrWhiteSpace(inv.NumeroSerie) || EsCodigoUnico(inv.Codigo);
+                        // 2. Buscar herramienta igual en destino (misma herramienta, código, serie, marca, estado)
+                        var existente = await _context.Inventario.FirstOrDefaultAsync(x =>
+                            x.Herramienta == inv.Herramienta &&
+                            x.Codigo == inv.Codigo &&
+                            x.NumeroSerie == inv.NumeroSerie &&
+                            x.Marca == inv.Marca &&
+                            x.Estado == inv.Estado &&
+                            x.Ubicacion == sol.Obra);
 
-                        if (tieneCodigoUnico)
+                        if (existente != null)
                         {
-                            // Crear un nuevo registro en destino
+                            existente.Cantidad += item.Cantidad;
+                            _context.Inventario.Update(existente);
+                        }
+                        else
+                        {
                             var nuevoInventario = new Inventario
                             {
                                 Codigo = inv.Codigo,
@@ -125,43 +132,6 @@
                                 Cantidad = item.Cantidad
                             };
                             _context.Inventario.Add(nuevoInventario);
-                        }
-                        else
-                        {
-                            // Ver si ya existe en la obra destino
-                            var existente = await _context.Inventario.FirstOrDefaultAsync(x =>
-                                x.Herramienta == inv.Herramienta &&
-                                x.Codigo == inv.Codigo &&
-                                x.Estado == inv.Estado &&
-                                x.Ubicacion == sol.Obra);
-
-                            if (existente != null)
-                            {
-                                existente.Cantidad += item.Cantidad;
-                                _context.Inventario.Update(existente);
-                            }
-                            else
-                            {
-                                var nuevoInventario = new Inventario
-                                {
-                                    Codigo = inv.Codigo,
-                                    Herramienta = inv.Herramienta,
-                                    NumeroSerie = inv.NumeroSerie,
-                                    FechaUltimoMantenimiento = inv.FechaUltimoMantenimiento,
-                                    FechaProximoMantenimiento = inv.FechaProximoMantenimiento,
-                                    EmpresaMantenimiento = inv.EmpresaMantenimiento,
-                                    Observaciones = inv.Observaciones,
-                                    Ubicacion = sol.Obra,
-                                    Responsable = sol.Solicitante,
-                                    Estado = inv.Estado,
-                                    Marca = inv.Marca,
-                                    Proveedor = inv.Proveedor,
-                                    Garantia = inv.Garantia,
-                                    FechaCompra = inv.FechaCompra,
-                                    Cantidad = item.Cantidad
-                                };
-                                _context.Inventario.Add(nuevoInventario);
-                            }
                         }
 
                         // 3. Registrar movimiento
@@ -190,12 +160,6 @@
             {
                 return StatusCode(500, $"Error interno: {ex.Message} {(ex.InnerException?.Message ?? "")}");
             }
-        }
-
-        private bool EsCodigoUnico(string codigo)
-        {
-            // Por ejemplo: si el código es completamente numérico o muy largo, es único
-            return int.TryParse(codigo, out _) || codigo.Length > 6;
         }
 
     }
