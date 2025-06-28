@@ -77,7 +77,6 @@
 
                 sol.Estado = nuevoEstado;
                 _context.Solicitud.Update(sol);
-
                 if (nuevoEstado == EstadoSolicitud.Aprobada)
                 {
                     foreach (var item in sol.Items)
@@ -85,10 +84,14 @@
                         var inv = item.Inventario;
 
                         if (inv == null)
-                        {
-                            // Log opcional
                             continue;
+
+                        if (item.Cantidad > inv.Cantidad)
+                        {
+                            return BadRequest($"No hay suficiente stock de {inv.Herramienta}. Disponibles: {inv.Cantidad}, Solicitados: {item.Cantidad}");
                         }
+
+                        inv.Cantidad -= item.Cantidad;
 
                         var mov = new Movimiento
                         {
@@ -100,7 +103,8 @@
                             FechaMovimiento = DateTime.UtcNow,
                             TipoMovimiento = "Salida",
                             Estado = inv.Estado,
-                            Comentario = $"Solicitud aprobada #{sol.Id}"
+                            Comentario = $"Solicitud aprobada #{sol.Id}",
+                            Cantidad = item.Cantidad 
                         };
 
                         _context.Movimiento.Add(mov);
@@ -110,6 +114,7 @@
                         _context.Inventario.Update(inv);
                     }
                 }
+
 
                 await _context.SaveChangesAsync();
                 return NoContent();
