@@ -20,6 +20,8 @@ namespace testback.Data
         public DbSet<Movimiento> Movimiento { get; set; }
         public DbSet<Inventario> Inventario { get; set; }
         public DbSet<InventarioInterno> InventarioInterno { get; set; }
+        public DbSet<RevisionInventario> RevisionInventario { get; set; }
+
 
         protected override void OnModelCreating(ModelBuilder builder)
         {
