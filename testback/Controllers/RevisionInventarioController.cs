@@ -53,30 +53,31 @@ namespace testback.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> CrearRevision([FromBody] RevisionInventario data)
-        {
-            if (!ModelState.IsValid)
-                return BadRequest(ModelState);
+public async Task<IActionResult> CrearRevision([FromBody] RevisionInventario data)
+{
+    if (!ModelState.IsValid)
+        return BadRequest(ModelState);
 
-            var valoresPermitidos = new[] { "Bueno", "Regular", "Malo", "Dado de baja", "Extraviado" };
+    var valoresPermitidos = new[] { "Bueno", "Regular", "Malo", "Dado de baja", "Extraviado" };
 
-            if (string.IsNullOrWhiteSpace(data.EstadoFisico) ||
-                !valoresPermitidos.Contains(data.EstadoFisico.Trim(), StringComparer.OrdinalIgnoreCase))
-            {
-                return BadRequest($"El estado físico debe ser uno de los siguientes: {string.Join(", ", valoresPermitidos)}.");
-            }
+    if (string.IsNullOrWhiteSpace(data.EstadoFisico) || 
+        !valoresPermitidos.Contains(data.EstadoFisico.Trim(), StringComparer.OrdinalIgnoreCase))
+    {
+        return BadRequest($"El estado físico debe ser uno de los siguientes: {string.Join(", ", valoresPermitidos)}.");
+    }
 
-            var existeInventario = await _context.Inventario.AnyAsync(i => i.Id == data.InventarioId);
-            if (!existeInventario)
-                return BadRequest($"Inventario con ID {data.InventarioId} no existe");
+    var existeInventario = await _context.Inventario.AnyAsync(i => i.Id == data.InventarioId);
+    if (!existeInventario)
+        return BadRequest($"Inventario con ID {data.InventarioId} no existe");
 
-            data.FechaRevision = DateTime.UtcNow;
+    data.FechaRevision = DateTime.UtcNow;
+    ModelState.Remove(nameof(data.FechaRevision));
+    
+    _context.RevisionInventario.Add(data);
+    await _context.SaveChangesAsync();
 
-            _context.RevisionInventario.Add(data);
-            await _context.SaveChangesAsync();
-
-            return CreatedAtAction(nameof(GetRevision), new { id = data.Id }, data);
-        }
+    return CreatedAtAction(nameof(GetRevision), new { id = data.Id }, data);
+}
 
 
         [HttpPut("{id}")]
