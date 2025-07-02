@@ -51,33 +51,34 @@ namespace testback.Controllers
 
             return Ok(revisiones);
         }
-
         [HttpPost]
-public async Task<IActionResult> CrearRevision([FromBody] RevisionInventario data)
-{
-    if (!ModelState.IsValid)
-        return BadRequest(ModelState);
+        public async Task<IActionResult> CrearRevision([FromBody] RevisionInventario data)
+        {
+            ModelState.Remove(nameof(data.FechaRevision));
+            ModelState.Remove(nameof(data.Inventario));
 
-    var valoresPermitidos = new[] { "Bueno", "Regular", "Malo", "Dado de baja", "Extraviado" };
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
 
-    if (string.IsNullOrWhiteSpace(data.EstadoFisico) || 
-        !valoresPermitidos.Contains(data.EstadoFisico.Trim(), StringComparer.OrdinalIgnoreCase))
-    {
-        return BadRequest($"El estado físico debe ser uno de los siguientes: {string.Join(", ", valoresPermitidos)}.");
-    }
+            var valoresPermitidos = new[] { "Bueno", "Regular", "Malo", "Dado de baja", "Extraviado" };
 
-    var existeInventario = await _context.Inventario.AnyAsync(i => i.Id == data.InventarioId);
-    if (!existeInventario)
-        return BadRequest($"Inventario con ID {data.InventarioId} no existe");
+            if (string.IsNullOrWhiteSpace(data.EstadoFisico) ||
+                !valoresPermitidos.Contains(data.EstadoFisico.Trim(), StringComparer.OrdinalIgnoreCase))
+            {
+                return BadRequest($"El estado físico debe ser uno de los siguientes: {string.Join(", ", valoresPermitidos)}.");
+            }
 
-    data.FechaRevision = DateTime.UtcNow;
-    ModelState.Remove(nameof(data.FechaRevision));
-    
-    _context.RevisionInventario.Add(data);
-    await _context.SaveChangesAsync();
+            var existeInventario = await _context.Inventario.AnyAsync(i => i.Id == data.InventarioId);
+            if (!existeInventario)
+                return BadRequest($"Inventario con ID {data.InventarioId} no existe");
 
-    return CreatedAtAction(nameof(GetRevision), new { id = data.Id }, data);
-}
+            data.FechaRevision = DateTime.UtcNow;
+
+            _context.RevisionInventario.Add(data);
+            await _context.SaveChangesAsync();
+
+            return CreatedAtAction(nameof(GetRevision), new { id = data.Id }, data);
+        }
 
 
         [HttpPut("{id}")]
