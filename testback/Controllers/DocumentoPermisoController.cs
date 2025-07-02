@@ -85,27 +85,24 @@ namespace testback.Controllers
         }
 
         [HttpPut("{id}")]
-        public async Task<IActionResult> Actualizar(int id, DocumentoPermiso documento)
+        public async Task<IActionResult> Actualizar(int id, [FromBody] DocumentoPermiso documento)
         {
             if (id != documento.Id)
                 return BadRequest();
 
-            _context.Entry(documento).State = EntityState.Modified;
+            var existente = await _context.DocumentoPermisos.FindAsync(id);
+            if (existente == null)
+                return NotFound();
 
-            try
-            {
-                await _context.SaveChangesAsync();
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                if (!_context.DocumentoPermisos.Any(d => d.Id == id))
-                    return NotFound();
-                else
-                    throw;
-            }
+            existente.NombreEmpleado = documento.NombreEmpleado;
+            existente.Comentarios = documento.Comentarios;
+            existente.FechaInicio = documento.FechaInicio;
+            existente.FechaFin = documento.FechaFin;
 
+            await _context.SaveChangesAsync();
             return NoContent();
         }
+
 
         [HttpDelete("{id}")]
         public async Task<IActionResult> Eliminar(int id)
