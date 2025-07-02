@@ -10,6 +10,6 @@ public class RevisionInventario
     public string Responsable { get; set; }
 
     public bool Encontrado { get; set; }
-    public string EstadoFisico { get; set; } // Ej: Bueno, Regular, Malo
+    public string EstadoFisico { get; set; }
     public string Observaciones { get; set; }
 }

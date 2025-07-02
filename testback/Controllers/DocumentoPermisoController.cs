@@ -11,7 +11,6 @@ namespace testback.Controllers
     public class DocumentoPermisoController : ControllerBase
     {
         private readonly ApplicationDbContext _context;
-        private readonly string _rutaBase = @"C:\Users\CAMILO TAMAYO\Desktop\Desarrollo\gestion de tiempos\back\Docspermisos";
 
         public DocumentoPermisoController(ApplicationDbContext context)
         {
@@ -27,12 +26,9 @@ namespace testback.Controllers
             if (dto.FechaInicio > dto.FechaFin)
                 return BadRequest("La fecha de inicio no puede ser posterior a la fecha de fin.");
 
-            var nombreArchivo = Guid.NewGuid().ToString() + Path.GetExtension(dto.Archivo.FileName);
-            var rutaCompleta = Path.Combine(_rutaBase, nombreArchivo);
-            Directory.CreateDirectory(_rutaBase);
-
-            using var stream = new FileStream(rutaCompleta, FileMode.Create);
-            await dto.Archivo.CopyToAsync(stream);
+            using var memoryStream = new MemoryStream();
+            await dto.Archivo.CopyToAsync(memoryStream);
+            var contenidoArchivo = memoryStream.ToArray();
 
             var documento = new DocumentoPermiso
             {
@@ -40,7 +36,8 @@ namespace testback.Controllers
                 Comentarios = dto.Comentarios,
                 FechaInicio = dto.FechaInicio,
                 FechaFin = dto.FechaFin,
-                RutaDocumento = rutaCompleta
+                Archivo = contenidoArchivo,
+                NombreArchivo = dto.Archivo.FileName
             };
 
             _context.DocumentoPermisos.Add(documento);
@@ -63,6 +60,28 @@ namespace testback.Controllers
                 return NotFound();
 
             return documento;
+        }
+
+        [HttpGet("ver/{id}")]
+        public async Task<IActionResult> VerArchivo(int id)
+        {
+            var documento = await _context.DocumentoPermisos.FindAsync(id);
+
+            if (documento == null || documento.Archivo == null)
+                return NotFound("Documento no encontrado o sin contenido.");
+
+            return File(documento.Archivo, "application/pdf");
+        }
+
+        [HttpGet("descargar/{id}")]
+        public async Task<IActionResult> DescargarArchivo(int id)
+        {
+            var documento = await _context.DocumentoPermisos.FindAsync(id);
+
+            if (documento == null || documento.Archivo == null)
+                return NotFound("Documento no encontrado o sin contenido.");
+
+            return File(documento.Archivo, "application/pdf", documento.NombreArchivo);
         }
 
         [HttpPut("{id}")]
@@ -95,51 +114,10 @@ namespace testback.Controllers
             if (documento == null)
                 return NotFound();
 
-            if (System.IO.File.Exists(documento.RutaDocumento))
-                System.IO.File.Delete(documento.RutaDocumento);
-
             _context.DocumentoPermisos.Remove(documento);
             await _context.SaveChangesAsync();
 
             return NoContent();
-        }
-    }
-
-    [ApiController]
-    [Route("api/[controller]")]
-    public class PdfController : ControllerBase
-    {
-        private readonly string _pdfFolderPath;
-
-        public PdfController(IWebHostEnvironment env)
-        {
-            _pdfFolderPath = @"C:\Users\CAMILO TAMAYO\Desktop\Desarrollo\gestion de tiempos\back\Docspermisos";
-        }
-
-        [HttpGet("ver/{fileName}")]
-        public IActionResult VerPdf(string fileName)
-        {
-            var filePath = Path.Combine(_pdfFolderPath, fileName);
-
-            if (!System.IO.File.Exists(filePath))
-            {
-                return NotFound($"Archivo no encontrado en: {filePath}");
-            }
-
-            var bytes = System.IO.File.ReadAllBytes(filePath);
-            return File(bytes, "application/pdf");
-        }
-
-        [HttpGet("descargar/{fileName}")]
-        public IActionResult DescargarPdf(string fileName)
-        {
-            var filePath = Path.Combine(_pdfFolderPath, fileName);
-
-            if (!System.IO.File.Exists(filePath))
-                return NotFound("El archivo PDF no existe.");
-
-            var bytes = System.IO.File.ReadAllBytes(filePath);
-            return File(bytes, "application/pdf", fileName);
         }
     }
 }
