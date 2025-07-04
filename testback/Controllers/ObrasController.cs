@@ -122,6 +122,17 @@ namespace testback.Controllers
             return Ok(obra);
         }
 
+        [HttpGet("inactivas")]
+        public async Task<ActionResult<IEnumerable<Obra>>> GetObrasInactivas()
+        {
+            var obrasInactivas = await _context.Obra
+                .Where(o => o.Estado.ToLower() == "inactivo") 
+                .ToListAsync();
+
+            return Ok(obrasInactivas);
+        }
+
+
         private bool ObraExists(int id)
         {
             return (_context.Obra?.Any(e => e.Id == id)).GetValueOrDefault();
