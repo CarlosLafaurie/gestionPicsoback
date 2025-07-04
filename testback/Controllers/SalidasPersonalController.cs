@@ -39,7 +39,7 @@ namespace testback.Controllers
         {
             var ultimo = await _context.SalidasPersonal
                 .Where(s => s.EmpleadoId == empleadoId)
-                .OrderByDescending(s => s.Id)
+                .OrderByDescending(s => s.FechaHoraSalida)
                 .FirstOrDefaultAsync();
 
             if (ultimo == null)
