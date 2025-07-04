@@ -105,6 +105,22 @@ public class EmpleadosController : ControllerBase
         return Ok(empleado);
     }
 
+    [HttpGet("inactivos")]
+    public async Task<IActionResult> GetEmpleadosInactivos(int page = 1, int pageSize = 10)
+    {
+        if (pageSize > 500) pageSize = 500;
+
+        var empleadosInactivos = await _context.Empleado
+            .Where(e => e.Estado == "Inactivo")
+            .OrderByDescending(e => e.Id)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync();
+
+        return Ok(empleadosInactivos);
+    }
+
+
     private bool EmpleadoExists(int id)
     {
         return (_context.Empleado?.Any(e => e.Id == id)).GetValueOrDefault();
