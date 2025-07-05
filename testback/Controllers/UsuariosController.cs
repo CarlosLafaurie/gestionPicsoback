@@ -103,6 +103,15 @@ namespace testback.Controllers
             if (id != usuario.Id)
                 return BadRequest("ID inválido.");
 
+            var existente = await _context.Usuario.AsNoTracking().FirstOrDefaultAsync(u => u.Id == id);
+            if (existente == null)
+                return NotFound();
+
+            if (!BCrypt.Net.BCrypt.Verify(usuario.ContrasenaHash, existente.ContrasenaHash))
+            {
+                usuario.ContrasenaHash = BCrypt.Net.BCrypt.HashPassword(usuario.ContrasenaHash);
+            }
+
             _context.Entry(usuario).State = EntityState.Modified;
 
             try
@@ -118,6 +127,7 @@ namespace testback.Controllers
                     throw;
             }
         }
+
 
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteUsuario(int id)
