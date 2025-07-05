@@ -4,6 +4,7 @@ using testback.Data;
 using testback.Models;
 using System.Threading.Tasks;
 using System.Linq;
+using System.Collections.Generic;
 
 namespace testback.Controllers
 {
@@ -28,6 +29,7 @@ namespace testback.Controllers
 
             var obras = await _context.Obra
                 .Where(o => o.Estado == "Activo")
+                .Include(o => o.Responsable)
                 .OrderByDescending(x => x.Id)
                 .ToListAsync();
 
@@ -38,6 +40,7 @@ namespace testback.Controllers
         public async Task<IActionResult> GetObra(int id)
         {
             var obra = await _context.Obra
+                .Include(o => o.Responsable)
                 .FirstOrDefaultAsync(m => m.Id == id && m.Estado == "Activo");
 
             if (obra == null)
@@ -59,6 +62,15 @@ namespace testback.Controllers
             if (string.IsNullOrWhiteSpace(obra.Ubicacion))
             {
                 return BadRequest("La ubicación es requerida.");
+            }
+
+            if (obra.ResponsableId.HasValue)
+            {
+                var usuarioExiste = await _context.Usuario.AnyAsync(u => u.Id == obra.ResponsableId);
+                if (!usuarioExiste)
+                {
+                    return BadRequest("El responsable asignado no existe.");
+                }
             }
 
             obra.Estado = "Activo";
@@ -84,6 +96,15 @@ namespace testback.Controllers
             if (string.IsNullOrWhiteSpace(obra.Ubicacion))
             {
                 return BadRequest("La ubicación es requerida.");
+            }
+
+            if (obra.ResponsableId.HasValue)
+            {
+                var usuarioExiste = await _context.Usuario.AnyAsync(u => u.Id == obra.ResponsableId);
+                if (!usuarioExiste)
+                {
+                    return BadRequest("El responsable asignado no existe.");
+                }
             }
 
             try
@@ -126,12 +147,12 @@ namespace testback.Controllers
         public async Task<ActionResult<IEnumerable<Obra>>> GetObrasInactivas()
         {
             var obrasInactivas = await _context.Obra
-                .Where(o => o.Estado.ToLower() == "inactivo") 
+                .Where(o => o.Estado.ToLower() == "inactivo")
+                .Include(o => o.Responsable)
                 .ToListAsync();
 
             return Ok(obrasInactivas);
         }
-
 
         private bool ObraExists(int id)
         {

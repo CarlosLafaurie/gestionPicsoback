@@ -28,7 +28,8 @@ namespace testback.Controllers
             if (loginRequest == null || string.IsNullOrEmpty(loginRequest.Cedula) || string.IsNullOrEmpty(loginRequest.Contrasena))
                 return BadRequest("Datos de inicio de sesión incompletos.");
 
-            var usuario = await _context.Usuario.FirstOrDefaultAsync(u => u.Cedula == loginRequest.Cedula);
+            var usuario = await _context.Usuario.Include(u => u.Obra)
+                                                .FirstOrDefaultAsync(u => u.Cedula == loginRequest.Cedula);
 
             if (usuario == null)
                 return Unauthorized("Usuario no encontrado.");
@@ -52,7 +53,7 @@ namespace testback.Controllers
                 new Claim("cedula", usuario.Cedula ?? ""),
                 new Claim("nombreCompleto", usuario.NombreCompleto ?? ""),
                 new Claim("cargo", usuario.Cargo ?? ""),
-                new Claim("obra", usuario.Obra ?? "")
+                new Claim("obraId", usuario.ObraId?.ToString() ?? "")
             };
 
             var secretKey = _configuration["Jwt:Key"];
@@ -73,14 +74,19 @@ namespace testback.Controllers
         [HttpGet]
         public async Task<IActionResult> GetUsuarios()
         {
-            var usuarios = await _context.Usuario.OrderByDescending(x => x.Id).ToListAsync();
+            var usuarios = await _context.Usuario
+                .Include(u => u.Obra)
+                .OrderByDescending(x => x.Id)
+                .ToListAsync();
             return Ok(usuarios);
         }
 
         [HttpGet("{id}")]
         public async Task<IActionResult> GetUsuario(int id)
         {
-            var usuario = await _context.Usuario.FindAsync(id);
+            var usuario = await _context.Usuario
+                .Include(u => u.Obra)
+                .FirstOrDefaultAsync(u => u.Id == id);
             return usuario == null ? NotFound() : Ok(usuario);
         }
 
@@ -89,6 +95,13 @@ namespace testback.Controllers
         {
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
+
+            if (usuario.ObraId.HasValue)
+            {
+                var obraExiste = await _context.Obra.AnyAsync(o => o.Id == usuario.ObraId);
+                if (!obraExiste)
+                    return BadRequest("La obra asignada no existe.");
+            }
 
             usuario.ContrasenaHash = BCrypt.Net.BCrypt.HashPassword(usuario.ContrasenaHash);
             _context.Usuario.Add(usuario);
@@ -103,6 +116,13 @@ namespace testback.Controllers
             if (id != usuario.Id)
                 return BadRequest("ID no coincide con el cuerpo de la solicitud.");
 
+            if (usuario.ObraId.HasValue)
+            {
+                var obraExiste = await _context.Obra.AnyAsync(o => o.Id == usuario.ObraId);
+                if (!obraExiste)
+                    return BadRequest("La obra asignada no existe.");
+            }
+
             try
             {
                 var usuarioExistente = await _context.Usuario.FirstOrDefaultAsync(u => u.Id == id);
@@ -110,22 +130,18 @@ namespace testback.Controllers
                 if (usuarioExistente == null)
                     return NotFound("Usuario no encontrado.");
 
+                // Hash si cambió la contraseña
                 if (!BCrypt.Net.BCrypt.Verify(usuario.ContrasenaHash, usuarioExistente.ContrasenaHash))
                 {
-                    usuario.ContrasenaHash = BCrypt.Net.BCrypt.HashPassword(usuario.ContrasenaHash);
-                }
-                else
-                {
-                    usuario.ContrasenaHash = usuarioExistente.ContrasenaHash;
+                    usuarioExistente.ContrasenaHash = BCrypt.Net.BCrypt.HashPassword(usuario.ContrasenaHash);
                 }
 
                 usuarioExistente.Cedula = usuario.Cedula;
                 usuarioExistente.NombreCompleto = usuario.NombreCompleto;
                 usuarioExistente.Cargo = usuario.Cargo;
-                usuarioExistente.Obra = usuario.Obra;
+                usuarioExistente.ObraId = usuario.ObraId;
                 usuarioExistente.Rol = usuario.Rol;
                 usuarioExistente.Estado = usuario.Estado;
-                usuarioExistente.ContrasenaHash = usuario.ContrasenaHash;
 
                 await _context.SaveChangesAsync();
                 return Ok(usuarioExistente);

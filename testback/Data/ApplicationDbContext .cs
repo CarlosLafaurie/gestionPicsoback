@@ -26,11 +26,18 @@ namespace testback.Data
         protected override void OnModelCreating(ModelBuilder builder)
         {
             base.OnModelCreating(builder);
+
             builder.Entity<Solicitud>()
                 .Property(s => s.Estado)
                 .HasConversion<string>()
                 .HasMaxLength(20)
                 .IsUnicode(false);
+
+            builder.Entity<Usuario>()
+                .HasOne(u => u.Obra)
+                .WithOne(o => o.Responsable)
+                .HasForeignKey<Usuario>(u => u.ObraId)
+                .OnDelete(DeleteBehavior.Restrict); 
         }
     }
 }
