@@ -107,26 +107,24 @@ namespace testback.Controllers
             if (existente == null)
                 return NotFound();
 
-            if (!BCrypt.Net.BCrypt.Verify(usuario.ContrasenaHash, existente.ContrasenaHash))
-            {
-                usuario.ContrasenaHash = BCrypt.Net.BCrypt.HashPassword(usuario.ContrasenaHash);
-            }
-
-            _context.Entry(usuario).State = EntityState.Modified;
-
             try
             {
+                if (!BCrypt.Net.BCrypt.Verify(usuario.ContrasenaHash, existente.ContrasenaHash))
+                {
+                    usuario.ContrasenaHash = BCrypt.Net.BCrypt.HashPassword(usuario.ContrasenaHash);
+                }
+
+                _context.Entry(usuario).State = EntityState.Modified;
                 await _context.SaveChangesAsync();
                 return NoContent();
             }
-            catch (DbUpdateConcurrencyException)
+            catch (Exception ex)
             {
-                if (!UsuarioExists(id))
-                    return NotFound();
-                else
-                    throw;
+                Console.WriteLine("❌ Error al actualizar usuario: " + ex.Message);
+                return StatusCode(500, "Error interno: " + ex.Message);
             }
         }
+
 
 
         [HttpDelete("{id}")]
