@@ -101,31 +101,41 @@ namespace testback.Controllers
         public async Task<IActionResult> EditUsuario(int id, [FromBody] Usuario usuario)
         {
             if (id != usuario.Id)
-                return BadRequest("ID inválido.");
-
-            var existente = await _context.Usuario.AsNoTracking().FirstOrDefaultAsync(u => u.Id == id);
-            if (existente == null)
-                return NotFound();
+                return BadRequest("ID no coincide con el cuerpo de la solicitud.");
 
             try
             {
-                if (!BCrypt.Net.BCrypt.Verify(usuario.ContrasenaHash, existente.ContrasenaHash))
+                var usuarioExistente = await _context.Usuario.FirstOrDefaultAsync(u => u.Id == id);
+
+                if (usuarioExistente == null)
+                    return NotFound("Usuario no encontrado.");
+
+                if (!BCrypt.Net.BCrypt.Verify(usuario.ContrasenaHash, usuarioExistente.ContrasenaHash))
                 {
                     usuario.ContrasenaHash = BCrypt.Net.BCrypt.HashPassword(usuario.ContrasenaHash);
                 }
+                else
+                {
+                    usuario.ContrasenaHash = usuarioExistente.ContrasenaHash;
+                }
 
-                _context.Entry(usuario).State = EntityState.Modified;
+                usuarioExistente.Cedula = usuario.Cedula;
+                usuarioExistente.NombreCompleto = usuario.NombreCompleto;
+                usuarioExistente.Cargo = usuario.Cargo;
+                usuarioExistente.Obra = usuario.Obra;
+                usuarioExistente.Rol = usuario.Rol;
+                usuarioExistente.Estado = usuario.Estado;
+                usuarioExistente.ContrasenaHash = usuario.ContrasenaHash;
+
                 await _context.SaveChangesAsync();
-                return NoContent();
+                return Ok(usuarioExistente);
             }
             catch (Exception ex)
             {
-                Console.WriteLine("❌ Error al actualizar usuario: " + ex.Message);
-                return StatusCode(500, "Error interno: " + ex.Message);
+                Console.WriteLine($"❌ Error actualizando usuario ID {id}: {ex.Message}");
+                return StatusCode(500, $"Error interno del servidor: {ex.Message}");
             }
         }
-
-
 
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteUsuario(int id)
