@@ -1,9 +1,7 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace testback.Models
-{
-    public class Obra
+public class Obra
     {
         public int Id { get; set; }
         [Required]
@@ -16,7 +14,8 @@ namespace testback.Models
         public required string Estado { get; set; } = "Activo";
         [Required]
         public required string Ubicacion { get; set; }
+        public int? ResponsableId { get; set; }
+        [ForeignKey("ResponsableId")]
         public Usuario? Responsable { get; set; }
         public string? ResponsableSecundario { get; set; }
     }
-}
