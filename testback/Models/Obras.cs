@@ -16,7 +16,7 @@ public class Obra
         [Required]
         public required string Ubicacion { get; set; }
         public int? ResponsableId { get; set; }
-        [ForeignKey("ResponsableId")]
-        public Usuario? Responsable { get; set; }
+        [NotMapped]
+        public object? Responsable => null;
         public string? ResponsableSecundario { get; set; }
     }

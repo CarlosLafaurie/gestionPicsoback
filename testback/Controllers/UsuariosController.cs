@@ -28,8 +28,7 @@ namespace testback.Controllers
             if (loginRequest == null || string.IsNullOrEmpty(loginRequest.Cedula) || string.IsNullOrEmpty(loginRequest.Contrasena))
                 return BadRequest("Datos de inicio de sesión incompletos.");
 
-            var usuario = await _context.Usuario.Include(u => u.Obra)
-                                                .FirstOrDefaultAsync(u => u.Cedula == loginRequest.Cedula);
+            var usuario = await _context.Usuario.FirstOrDefaultAsync(u => u.Cedula == loginRequest.Cedula);
 
             if (usuario == null)
                 return Unauthorized("Usuario no encontrado.");
@@ -79,7 +78,24 @@ namespace testback.Controllers
                 .OrderByDescending(x => x.Id)
                 .AsNoTracking()
                 .ToListAsync();
-            return Ok(usuarios);
+
+            var resultado = usuarios.Select(u => new
+            {
+                u.Id,
+                u.Cedula,
+                u.NombreCompleto,
+                u.Cargo,
+                u.Rol,
+                u.Estado,
+                Obra = u.Obra == null ? null : new
+                {
+                    u.Obra.Id,
+                    u.Obra.NombreObra,
+                    u.Obra.Ubicacion
+                }
+            });
+
+            return Ok(resultado);
         }
 
         [HttpGet("{id}")]
@@ -88,7 +104,25 @@ namespace testback.Controllers
             var usuario = await _context.Usuario
                 .Include(u => u.Obra)
                 .FirstOrDefaultAsync(u => u.Id == id);
-            return usuario == null ? NotFound() : Ok(usuario);
+
+            if (usuario == null)
+                return NotFound();
+
+            return Ok(new
+            {
+                usuario.Id,
+                usuario.Cedula,
+                usuario.NombreCompleto,
+                usuario.Cargo,
+                usuario.Rol,
+                usuario.Estado,
+                Obra = usuario.Obra == null ? null : new
+                {
+                    usuario.Obra.Id,
+                    usuario.Obra.NombreObra,
+                    usuario.Obra.Ubicacion
+                }
+            });
         }
 
         [HttpPost]
@@ -99,14 +133,25 @@ namespace testback.Controllers
 
             if (usuario.ObraId.HasValue)
             {
-                var obraExiste = await _context.Obra.AnyAsync(o => o.Id == usuario.ObraId);
-                if (!obraExiste)
+                var obra = await _context.Obra.FirstOrDefaultAsync(o => o.Id == usuario.ObraId.Value);
+                if (obra == null)
                     return BadRequest("La obra asignada no existe.");
             }
 
             usuario.ContrasenaHash = BCrypt.Net.BCrypt.HashPassword(usuario.ContrasenaHash);
             _context.Usuario.Add(usuario);
             await _context.SaveChangesAsync();
+
+            // Asignar como responsable de la obra (si aplica)
+            if (usuario.ObraId.HasValue)
+            {
+                var obra = await _context.Obra.FirstOrDefaultAsync(o => o.Id == usuario.ObraId.Value);
+                if (obra != null)
+                {
+                    obra.ResponsableId = usuario.Id;
+                    await _context.SaveChangesAsync();
+                }
+            }
 
             return CreatedAtAction(nameof(GetUsuario), new { id = usuario.Id }, usuario);
         }
@@ -117,42 +162,36 @@ namespace testback.Controllers
             if (id != usuario.Id)
                 return BadRequest("ID no coincide con el cuerpo de la solicitud.");
 
-            if (usuario.ObraId.HasValue)
-            {
-                var obraExiste = await _context.Obra.AnyAsync(o => o.Id == usuario.ObraId);
-                if (!obraExiste)
-                    return BadRequest("La obra asignada no existe.");
-            }
-
             try
             {
                 var usuarioExistente = await _context.Usuario.FirstOrDefaultAsync(u => u.Id == id);
-
                 if (usuarioExistente == null)
                     return NotFound("Usuario no encontrado.");
 
+                // Si cambió la contraseña, actualízala
                 if (!BCrypt.Net.BCrypt.Verify(usuario.ContrasenaHash, usuarioExistente.ContrasenaHash))
-                {
                     usuarioExistente.ContrasenaHash = BCrypt.Net.BCrypt.HashPassword(usuario.ContrasenaHash);
-                }
 
                 usuarioExistente.Cedula = usuario.Cedula;
                 usuarioExistente.NombreCompleto = usuario.NombreCompleto;
                 usuarioExistente.Cargo = usuario.Cargo;
-                usuarioExistente.ObraId = usuario.ObraId;
                 usuarioExistente.Rol = usuario.Rol;
                 usuarioExistente.Estado = usuario.Estado;
+                usuarioExistente.ObraId = usuario.ObraId;
 
+                await _context.SaveChangesAsync();
+
+                // Actualizar obra si fue asignada
                 if (usuario.ObraId.HasValue)
                 {
                     var obra = await _context.Obra.FirstOrDefaultAsync(o => o.Id == usuario.ObraId.Value);
                     if (obra != null)
                     {
                         obra.ResponsableId = usuario.Id;
+                        await _context.SaveChangesAsync();
                     }
                 }
 
-                await _context.SaveChangesAsync();
                 return Ok(usuarioExistente);
             }
             catch (Exception ex)

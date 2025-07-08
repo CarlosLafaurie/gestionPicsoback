@@ -23,55 +23,77 @@ namespace testback.Controllers
         public async Task<IActionResult> GetObras()
         {
             if (_context.Obra == null)
-            {
                 return NotFound("No hay obras registradas.");
-            }
 
             var obras = await _context.Obra
                 .Where(o => o.Estado == "Activo")
-                .Include(o => o.Responsable)
-                .AsNoTracking()
                 .OrderByDescending(x => x.Id)
+                .AsNoTracking()
                 .ToListAsync();
 
-            return obras.Any() ? Ok(obras) : NotFound("No hay obras activas.");
+            // Opcional: puedes retornar el nombre del responsable en una proyección
+            var resultado = obras.Select(o => new
+            {
+                o.Id,
+                o.NombreObra,
+                o.ClienteObra,
+                o.CostoObra,
+                o.Estado,
+                o.Ubicacion,
+                o.ResponsableId,
+                ResponsableNombre = _context.Usuario
+                    .Where(u => u.Id == o.ResponsableId)
+                    .Select(u => u.NombreCompleto)
+                    .FirstOrDefault(),
+                o.ResponsableSecundario
+            });
+
+            return Ok(resultado);
         }
 
         [HttpGet("{id}")]
         public async Task<IActionResult> GetObra(int id)
         {
             var obra = await _context.Obra
-                .Include(o => o.Responsable)
+                .AsNoTracking()
                 .FirstOrDefaultAsync(m => m.Id == id && m.Estado == "Activo");
 
             if (obra == null)
-            {
                 return NotFound();
-            }
 
-            return Ok(obra);
+            var responsableNombre = await _context.Usuario
+                .Where(u => u.Id == obra.ResponsableId)
+                .Select(u => u.NombreCompleto)
+                .FirstOrDefaultAsync();
+
+            return Ok(new
+            {
+                obra.Id,
+                obra.NombreObra,
+                obra.ClienteObra,
+                obra.CostoObra,
+                obra.Estado,
+                obra.Ubicacion,
+                obra.ResponsableId,
+                ResponsableNombre = responsableNombre,
+                obra.ResponsableSecundario
+            });
         }
 
         [HttpPost]
         public async Task<IActionResult> CreateObra(Obra obra)
         {
             if (!ModelState.IsValid)
-            {
                 return BadRequest(ModelState);
-            }
 
             if (string.IsNullOrWhiteSpace(obra.Ubicacion))
-            {
                 return BadRequest("La ubicación es requerida.");
-            }
 
             if (obra.ResponsableId.HasValue)
             {
                 var usuarioExiste = await _context.Usuario.AnyAsync(u => u.Id == obra.ResponsableId);
                 if (!usuarioExiste)
-                {
                     return BadRequest("El responsable asignado no existe.");
-                }
             }
 
             obra.Estado = "Activo";
@@ -85,27 +107,19 @@ namespace testback.Controllers
         public async Task<IActionResult> EditObra(int id, Obra obra)
         {
             if (id != obra.Id)
-            {
                 return BadRequest("El ID no coincide.");
-            }
 
             if (!ModelState.IsValid)
-            {
                 return BadRequest(ModelState);
-            }
 
             if (string.IsNullOrWhiteSpace(obra.Ubicacion))
-            {
                 return BadRequest("La ubicación es requerida.");
-            }
 
             if (obra.ResponsableId.HasValue)
             {
                 var usuarioExiste = await _context.Usuario.AnyAsync(u => u.Id == obra.ResponsableId);
                 if (!usuarioExiste)
-                {
                     return BadRequest("El responsable asignado no existe.");
-                }
             }
 
             try
@@ -116,13 +130,9 @@ namespace testback.Controllers
             catch (DbUpdateConcurrencyException)
             {
                 if (!ObraExists(obra.Id))
-                {
                     return NotFound();
-                }
                 else
-                {
                     throw;
-                }
             }
 
             return NoContent();
@@ -133,9 +143,7 @@ namespace testback.Controllers
         {
             var obra = await _context.Obra.FindAsync(id);
             if (obra == null)
-            {
                 return NotFound();
-            }
 
             obra.Estado = "Inactivo";
             _context.Obra.Update(obra);
@@ -149,7 +157,7 @@ namespace testback.Controllers
         {
             var obrasInactivas = await _context.Obra
                 .Where(o => o.Estado.ToLower() == "inactivo")
-                .Include(o => o.Responsable)
+                .AsNoTracking()
                 .ToListAsync();
 
             return Ok(obrasInactivas);
