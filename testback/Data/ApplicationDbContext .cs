@@ -34,10 +34,10 @@ namespace testback.Data
                 .IsUnicode(false);
 
             builder.Entity<Usuario>()
-                .HasOne(u => u.Obra)
-                .WithOne(o => o.Responsable)
-                .HasForeignKey<Usuario>(u => u.ObraId)
-                .OnDelete(DeleteBehavior.Restrict); 
+            .HasOne(u => u.Obra)
+            .WithMany()
+            .HasForeignKey(u => u.ObraId)
+            .OnDelete(DeleteBehavior.Restrict);
         }
     }
 }
