@@ -130,7 +130,6 @@ namespace testback.Controllers
                 if (usuarioExistente == null)
                     return NotFound("Usuario no encontrado.");
 
-                // Hash si cambió la contraseña
                 if (!BCrypt.Net.BCrypt.Verify(usuario.ContrasenaHash, usuarioExistente.ContrasenaHash))
                 {
                     usuarioExistente.ContrasenaHash = BCrypt.Net.BCrypt.HashPassword(usuario.ContrasenaHash);
@@ -142,6 +141,15 @@ namespace testback.Controllers
                 usuarioExistente.ObraId = usuario.ObraId;
                 usuarioExistente.Rol = usuario.Rol;
                 usuarioExistente.Estado = usuario.Estado;
+
+                if (usuario.ObraId.HasValue)
+                {
+                    var obra = await _context.Obra.FirstOrDefaultAsync(o => o.Id == usuario.ObraId.Value);
+                    if (obra != null)
+                    {
+                        obra.ResponsableId = usuario.Id;
+                    }
+                }
 
                 await _context.SaveChangesAsync();
                 return Ok(usuarioExistente);
