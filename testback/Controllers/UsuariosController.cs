@@ -1,11 +1,11 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
 using testback.Data;
 using testback.Models;
+using Microsoft.IdentityModel.Tokens;
 
 namespace testback.Controllers
 {
@@ -23,63 +23,48 @@ namespace testback.Controllers
         }
 
         [HttpPost("login")]
-        public async Task<IActionResult> Login([FromBody] LoginRequest loginRequest)
+        public async Task<IActionResult> Login([FromBody] LoginRequest req)
         {
-            if (loginRequest == null || string.IsNullOrEmpty(loginRequest.Cedula) || string.IsNullOrEmpty(loginRequest.Contrasena))
-                return BadRequest("Datos de inicio de sesión incompletos.");
+            if (req is null || string.IsNullOrEmpty(req.Cedula) || string.IsNullOrEmpty(req.Contrasena))
+                return BadRequest("Datos incompletos.");
 
-            var usuario = await _context.Usuario.FirstOrDefaultAsync(u => u.Cedula == loginRequest.Cedula);
+            var usr = await _context.Usuario
+                .FirstOrDefaultAsync(u => u.Cedula == req.Cedula);
 
-            if (usuario == null)
-                return Unauthorized("Usuario no encontrado.");
+            if (usr == null || !BCrypt.Net.BCrypt.Verify(req.Contrasena, usr.ContrasenaHash))
+                return Unauthorized("Credenciales inválidas.");
 
-            if (!BCrypt.Net.BCrypt.Verify(loginRequest.Contrasena, usuario.ContrasenaHash))
-                return Unauthorized("Contraseña incorrecta.");
-
-            var token = GenerateJwtToken(usuario);
-            return Ok(new { token });
-        }
-
-        private string GenerateJwtToken(Usuario usuario)
-        {
+            // Generar JWT
             var claims = new[]
             {
-                new Claim(JwtRegisteredClaimNames.Sub, usuario.Cedula),
-                new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
-                new Claim(ClaimTypes.Name, usuario.NombreCompleto ?? ""),
-                new Claim("role", usuario.Rol ?? ""),
-                new Claim("id", usuario.Id.ToString()),
-                new Claim("cedula", usuario.Cedula ?? ""),
-                new Claim("nombreCompleto", usuario.NombreCompleto ?? ""),
-                new Claim("cargo", usuario.Cargo ?? ""),
-                new Claim("obraId", usuario.ObraId?.ToString() ?? "")
+                new Claim(JwtRegisteredClaimNames.Sub, usr.Cedula),
+                new Claim(ClaimTypes.Name, usr.NombreCompleto),
+                new Claim("role", usr.Rol),
+                new Claim("id", usr.Id.ToString()),
+                new Claim("obraId", usr.ObraId?.ToString() ?? "")
             };
-
-            var secretKey = _configuration["Jwt:Key"];
-            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey));
+            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["Jwt:Key"]!));
             var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
-
-            var token = new JwtSecurityToken(
+            var tok = new JwtSecurityToken(
                 issuer: _configuration["Jwt:Issuer"],
                 audience: _configuration["Jwt:Audience"],
                 claims: claims,
                 expires: DateTime.UtcNow.AddHours(1),
                 signingCredentials: creds
             );
-
-            return new JwtSecurityTokenHandler().WriteToken(token);
+            return Ok(new { token = new JwtSecurityTokenHandler().WriteToken(tok) });
         }
 
         [HttpGet]
         public async Task<IActionResult> GetUsuarios()
         {
-            var usuarios = await _context.Usuario
-                .Include(u => u.Obra)
-                .OrderByDescending(x => x.Id)
+            var list = await _context.Usuario
+                .OrderByDescending(u => u.Id)
                 .AsNoTracking()
                 .ToListAsync();
 
-            var resultado = usuarios.Select(u => new
+            // Proyección DTO
+            var dto = list.Select(u => new
             {
                 u.Id,
                 u.Cedula,
@@ -87,137 +72,105 @@ namespace testback.Controllers
                 u.Cargo,
                 u.Rol,
                 u.Estado,
-                Obra = u.Obra == null ? null : new
-                {
-                    u.Obra.Id,
-                    u.Obra.NombreObra,
-                    u.Obra.Ubicacion
-                }
+                u.ObraId
             });
 
-            return Ok(resultado);
+            return Ok(dto);
         }
 
         [HttpGet("{id}")]
         public async Task<IActionResult> GetUsuario(int id)
         {
-            var usuario = await _context.Usuario
-                .Include(u => u.Obra)
-                .FirstOrDefaultAsync(u => u.Id == id);
+            var u = await _context.Usuario
+                .AsNoTracking()
+                .FirstOrDefaultAsync(x => x.Id == id);
 
-            if (usuario == null)
-                return NotFound();
+            if (u == null) return NotFound();
 
             return Ok(new
             {
-                usuario.Id,
-                usuario.Cedula,
-                usuario.NombreCompleto,
-                usuario.Cargo,
-                usuario.Rol,
-                usuario.Estado,
-                Obra = usuario.Obra == null ? null : new
-                {
-                    usuario.Obra.Id,
-                    usuario.Obra.NombreObra,
-                    usuario.Obra.Ubicacion
-                }
+                u.Id,
+                u.Cedula,
+                u.NombreCompleto,
+                u.Cargo,
+                u.Rol,
+                u.Estado,
+                u.ObraId
             });
         }
 
         [HttpPost]
-        public async Task<IActionResult> CreateUsuario([FromBody] Usuario usuario)
+        public async Task<IActionResult> CreateUsuario([FromBody] Usuario u)
         {
-            if (!ModelState.IsValid)
-                return BadRequest(ModelState);
+            if (!ModelState.IsValid) return BadRequest(ModelState);
 
-            if (usuario.ObraId.HasValue)
-            {
-                var obra = await _context.Obra.FirstOrDefaultAsync(o => o.Id == usuario.ObraId.Value);
-                if (obra == null)
-                    return BadRequest("La obra asignada no existe.");
-            }
-
-            usuario.ContrasenaHash = BCrypt.Net.BCrypt.HashPassword(usuario.ContrasenaHash);
-            _context.Usuario.Add(usuario);
+            u.ContrasenaHash = BCrypt.Net.BCrypt.HashPassword(u.ContrasenaHash);
+            _context.Usuario.Add(u);
             await _context.SaveChangesAsync();
 
-            // Asignar como responsable de la obra (si aplica)
-            if (usuario.ObraId.HasValue)
+            return CreatedAtAction(nameof(GetUsuario), new { id = u.Id }, new { u.Id });
+        }
+
+        [HttpPut("{id}")]
+        public async Task<IActionResult> EditUsuario(int id, [FromBody] Usuario u)
+        {
+            if (id != u.Id) return BadRequest("ID no coincide.");
+
+            // 1) Buscamos el usuario original
+            var orig = await _context.Usuario.FindAsync(id);
+            if (orig == null) return NotFound();
+
+            // 2) Actualizamos los campos básicos
+            if (!BCrypt.Net.BCrypt.Verify(u.ContrasenaHash, orig.ContrasenaHash))
+                orig.ContrasenaHash = BCrypt.Net.BCrypt.HashPassword(u.ContrasenaHash);
+            orig.Cedula = u.Cedula;
+            orig.NombreCompleto = u.NombreCompleto;
+            orig.Cargo = u.Cargo;
+            orig.Rol = u.Rol;
+            orig.Estado = u.Estado;
+
+            // 3) ¿Cambio de obra? Guardamos el anterior para despegarlo luego
+            var obraAnteriorId = orig.ObraId;
+            orig.ObraId = u.ObraId;
+
+            // 4) Salvamos cambios en usuario
+            await _context.SaveChangesAsync();
+
+            // 5) Si había obra anterior y era distinto, la “desasignamos”
+            if (obraAnteriorId.HasValue && obraAnteriorId != u.ObraId)
             {
-                var obra = await _context.Obra.FirstOrDefaultAsync(o => o.Id == usuario.ObraId.Value);
-                if (obra != null)
+                var vieja = await _context.Obra.FindAsync(obraAnteriorId.Value);
+                if (vieja != null)
                 {
-                    obra.ResponsableId = usuario.Id;
+                    vieja.ResponsableId = null;
                     await _context.SaveChangesAsync();
                 }
             }
 
-            return CreatedAtAction(nameof(GetUsuario), new { id = usuario.Id }, usuario);
-        }
-
-        [HttpPut("{id}")]
-        public async Task<IActionResult> EditUsuario(int id, [FromBody] Usuario usuario)
-        {
-            if (id != usuario.Id)
-                return BadRequest("ID no coincide con el cuerpo de la solicitud.");
-
-            try
+            // 6) Si ahora tiene obra asignada, la enlazamos como responsable
+            if (u.ObraId.HasValue)
             {
-                var usuarioExistente = await _context.Usuario.FirstOrDefaultAsync(u => u.Id == id);
-                if (usuarioExistente == null)
-                    return NotFound("Usuario no encontrado.");
-
-                // Si cambió la contraseña, actualízala
-                if (!BCrypt.Net.BCrypt.Verify(usuario.ContrasenaHash, usuarioExistente.ContrasenaHash))
-                    usuarioExistente.ContrasenaHash = BCrypt.Net.BCrypt.HashPassword(usuario.ContrasenaHash);
-
-                usuarioExistente.Cedula = usuario.Cedula;
-                usuarioExistente.NombreCompleto = usuario.NombreCompleto;
-                usuarioExistente.Cargo = usuario.Cargo;
-                usuarioExistente.Rol = usuario.Rol;
-                usuarioExistente.Estado = usuario.Estado;
-                usuarioExistente.ObraId = usuario.ObraId;
-
-                await _context.SaveChangesAsync();
-
-                // Actualizar obra si fue asignada
-                if (usuario.ObraId.HasValue)
+                var obraNueva = await _context.Obra.FindAsync(u.ObraId.Value);
+                if (obraNueva != null)
                 {
-                    var obra = await _context.Obra.FirstOrDefaultAsync(o => o.Id == usuario.ObraId.Value);
-                    if (obra != null)
-                    {
-                        obra.ResponsableId = usuario.Id;
-                        await _context.SaveChangesAsync();
-                    }
+                    obraNueva.ResponsableId = u.Id;
+                    await _context.SaveChangesAsync();
                 }
+            }
 
-                return Ok(usuarioExistente);
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"❌ Error actualizando usuario ID {id}: {ex.Message}");
-                return StatusCode(500, $"Error interno del servidor: {ex.Message}");
-            }
+            return Ok(new { orig.Id });
         }
+
 
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteUsuario(int id)
         {
-            var usuario = await _context.Usuario.FindAsync(id);
-            if (usuario == null)
-                return NotFound();
+            var usr = await _context.Usuario.FindAsync(id);
+            if (usr == null) return NotFound();
 
-            usuario.Estado = "Inactivo";
-            _context.Usuario.Update(usuario);
+            usr.Estado = "Inactivo";
             await _context.SaveChangesAsync();
-
-            return Ok(usuario);
-        }
-
-        private bool UsuarioExists(int id)
-        {
-            return _context.Usuario.Any(e => e.Id == id);
+            return Ok(new { usr.Id });
         }
 
         public class LoginRequest

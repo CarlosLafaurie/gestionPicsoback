@@ -33,11 +33,11 @@ namespace testback.Data
                 .HasMaxLength(20)
                 .IsUnicode(false);
 
-            builder.Entity<Usuario>()
-            .HasOne(u => u.Obra)
-            .WithMany()
-            .HasForeignKey(u => u.ObraId)
-            .OnDelete(DeleteBehavior.Restrict);
+            builder.Entity<Obra>()
+              .HasOne<Usuario>()
+              .WithMany()
+              .HasForeignKey(o => o.ResponsableId)
+              .OnDelete(DeleteBehavior.Restrict);
         }
     }
 }

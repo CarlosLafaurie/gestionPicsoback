@@ -2,9 +2,6 @@
 using Microsoft.EntityFrameworkCore;
 using testback.Data;
 using testback.Models;
-using System.Threading.Tasks;
-using System.Linq;
-using System.Collections.Generic;
 
 namespace testback.Controllers
 {
@@ -22,17 +19,13 @@ namespace testback.Controllers
         [HttpGet]
         public async Task<IActionResult> GetObras()
         {
-            if (_context.Obra == null)
-                return NotFound("No hay obras registradas.");
-
             var obras = await _context.Obra
                 .Where(o => o.Estado == "Activo")
-                .OrderByDescending(x => x.Id)
+                .OrderByDescending(o => o.Id)
                 .AsNoTracking()
                 .ToListAsync();
 
-            // Opcional: puedes retornar el nombre del responsable en una proyección
-            var resultado = obras.Select(o => new
+            var dto = obras.Select(o => new
             {
                 o.Id,
                 o.NombreObra,
@@ -48,124 +41,92 @@ namespace testback.Controllers
                 o.ResponsableSecundario
             });
 
-            return Ok(resultado);
+            return Ok(dto);
         }
 
         [HttpGet("{id}")]
         public async Task<IActionResult> GetObra(int id)
         {
-            var obra = await _context.Obra
+            var o = await _context.Obra
                 .AsNoTracking()
-                .FirstOrDefaultAsync(m => m.Id == id && m.Estado == "Activo");
+                .FirstOrDefaultAsync(x => x.Id == id && x.Estado == "Activo");
 
-            if (obra == null)
-                return NotFound();
+            if (o == null) return NotFound();
 
-            var responsableNombre = await _context.Usuario
-                .Where(u => u.Id == obra.ResponsableId)
+            var nombreResp = await _context.Usuario
+                .Where(u => u.Id == o.ResponsableId)
                 .Select(u => u.NombreCompleto)
                 .FirstOrDefaultAsync();
 
             return Ok(new
             {
-                obra.Id,
-                obra.NombreObra,
-                obra.ClienteObra,
-                obra.CostoObra,
-                obra.Estado,
-                obra.Ubicacion,
-                obra.ResponsableId,
-                ResponsableNombre = responsableNombre,
-                obra.ResponsableSecundario
+                o.Id,
+                o.NombreObra,
+                o.ClienteObra,
+                o.CostoObra,
+                o.Estado,
+                o.Ubicacion,
+                o.ResponsableId,
+                ResponsableNombre = nombreResp,
+                o.ResponsableSecundario
             });
         }
 
         [HttpPost]
-        public async Task<IActionResult> CreateObra(Obra obra)
+        public async Task<IActionResult> CreateObra([FromBody] Obra o)
         {
-            if (!ModelState.IsValid)
-                return BadRequest(ModelState);
+            if (!ModelState.IsValid) return BadRequest(ModelState);
+            if (string.IsNullOrWhiteSpace(o.Ubicacion))
+                return BadRequest("Ubicación requerida.");
 
-            if (string.IsNullOrWhiteSpace(obra.Ubicacion))
-                return BadRequest("La ubicación es requerida.");
-
-            if (obra.ResponsableId.HasValue)
+            if (o.ResponsableId.HasValue)
             {
-                var usuarioExiste = await _context.Usuario.AnyAsync(u => u.Id == obra.ResponsableId);
-                if (!usuarioExiste)
-                    return BadRequest("El responsable asignado no existe.");
+                bool existe = await _context.Usuario.AnyAsync(u => u.Id == o.ResponsableId);
+                if (!existe) return BadRequest("Responsable no existe.");
             }
 
-            obra.Estado = "Activo";
-            _context.Add(obra);
+            o.Estado = "Activo";
+            _context.Obra.Add(o);
             await _context.SaveChangesAsync();
-
-            return CreatedAtAction(nameof(GetObra), new { id = obra.Id }, obra);
+            return CreatedAtAction(nameof(GetObra), new { id = o.Id }, new { o.Id });
         }
 
         [HttpPut("{id}")]
-        public async Task<IActionResult> EditObra(int id, Obra obra)
+        public async Task<IActionResult> EditObra(int id, [FromBody] Obra o)
         {
-            if (id != obra.Id)
-                return BadRequest("El ID no coincide.");
+            if (id != o.Id) return BadRequest("ID no coincide.");
+            if (!ModelState.IsValid) return BadRequest(ModelState);
 
-            if (!ModelState.IsValid)
-                return BadRequest(ModelState);
-
-            if (string.IsNullOrWhiteSpace(obra.Ubicacion))
-                return BadRequest("La ubicación es requerida.");
-
-            if (obra.ResponsableId.HasValue)
+            if (o.ResponsableId.HasValue)
             {
-                var usuarioExiste = await _context.Usuario.AnyAsync(u => u.Id == obra.ResponsableId);
-                if (!usuarioExiste)
-                    return BadRequest("El responsable asignado no existe.");
+                bool existe = await _context.Usuario.AnyAsync(u => u.Id == o.ResponsableId);
+                if (!existe) return BadRequest("Responsable no existe.");
             }
 
-            try
-            {
-                _context.Update(obra);
-                await _context.SaveChangesAsync();
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                if (!ObraExists(obra.Id))
-                    return NotFound();
-                else
-                    throw;
-            }
+            var orig = await _context.Obra.FindAsync(id);
+            if (orig == null) return NotFound();
 
+            orig.NombreObra = o.NombreObra;
+            orig.ClienteObra = o.ClienteObra;
+            orig.CostoObra = o.CostoObra;
+            orig.Estado = o.Estado;
+            orig.Ubicacion = o.Ubicacion;
+            orig.ResponsableId = o.ResponsableId;
+            orig.ResponsableSecundario = o.ResponsableSecundario;
+
+            await _context.SaveChangesAsync();
             return NoContent();
         }
 
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteObra(int id)
         {
-            var obra = await _context.Obra.FindAsync(id);
-            if (obra == null)
-                return NotFound();
+            var o = await _context.Obra.FindAsync(id);
+            if (o == null) return NotFound();
 
-            obra.Estado = "Inactivo";
-            _context.Obra.Update(obra);
+            o.Estado = "Inactivo";
             await _context.SaveChangesAsync();
-
-            return Ok(obra);
-        }
-
-        [HttpGet("inactivas")]
-        public async Task<ActionResult<IEnumerable<Obra>>> GetObrasInactivas()
-        {
-            var obrasInactivas = await _context.Obra
-                .Where(o => o.Estado.ToLower() == "inactivo")
-                .AsNoTracking()
-                .ToListAsync();
-
-            return Ok(obrasInactivas);
-        }
-
-        private bool ObraExists(int id)
-        {
-            return (_context.Obra?.Any(e => e.Id == id)).GetValueOrDefault();
+            return Ok(new { o.Id });
         }
     }
 }
