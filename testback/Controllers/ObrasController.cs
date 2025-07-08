@@ -30,6 +30,7 @@ namespace testback.Controllers
             var obras = await _context.Obra
                 .Where(o => o.Estado == "Activo")
                 .Include(o => o.Responsable)
+                .AsNoTracking()
                 .OrderByDescending(x => x.Id)
                 .ToListAsync();
 

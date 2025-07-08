@@ -1,5 +1,6 @@
 ﻿    using System.ComponentModel.DataAnnotations;
     using testback.Models;
+    using System.Text.Json.Serialization;
 
     public class Usuario
     {
@@ -18,5 +19,6 @@
         [StringLength(10)]
         public required string Estado { get; set; } = "Activo";
         public int? ObraId { get; set; }
+        [JsonIgnore]
         public Obra? Obra { get; set; }
     }

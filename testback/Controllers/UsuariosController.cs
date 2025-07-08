@@ -77,6 +77,7 @@ namespace testback.Controllers
             var usuarios = await _context.Usuario
                 .Include(u => u.Obra)
                 .OrderByDescending(x => x.Id)
+                .AsNoTracking()
                 .ToListAsync();
             return Ok(usuarios);
         }
