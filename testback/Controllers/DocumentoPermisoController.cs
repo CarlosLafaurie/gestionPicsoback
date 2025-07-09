@@ -98,7 +98,7 @@ namespace testback.Controllers
         }
 
         [HttpPut("{id}")]
-        public async Task<IActionResult> Actualizar(int id, [FromBody] DocumentoPermiso documento)
+        public async Task<IActionResult> Actualizar(int id, [FromBody] ActualizarDocumentoPermisoDto documento)
         {
             if (id != documento.Id)
                 return BadRequest();
@@ -111,6 +111,9 @@ namespace testback.Controllers
             existente.Comentarios = documento.Comentarios;
             existente.FechaInicio = documento.FechaInicio;
             existente.FechaFin = documento.FechaFin;
+
+            if (!string.IsNullOrEmpty(documento.NombreArchivo))
+                existente.NombreArchivo = documento.NombreArchivo;
 
             await _context.SaveChangesAsync();
             return NoContent();
