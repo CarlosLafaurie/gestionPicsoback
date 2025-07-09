@@ -24,7 +24,7 @@ namespace testback.Controllers
                 return BadRequest("La fecha de inicio no puede ser posterior a la fecha de fin.");
 
             byte[]? contenidoArchivo = null;
-            string? nombreArchivo = null;
+            string nombreArchivo = "SinArchivo"; // Valor por defecto
 
             if (dto.Archivo != null && dto.Archivo.Length > 0)
             {
@@ -56,11 +56,11 @@ namespace testback.Controllers
                 .Select(d => new
                 {
                     d.Id,
-                    d.NombreEmpleado,
-                    d.Comentarios,
+                    NombreEmpleado = d.NombreEmpleado ?? "",
+                    Comentarios = d.Comentarios ?? "",
                     d.FechaInicio,
                     d.FechaFin,
-                    d.NombreArchivo
+                    NombreArchivo = d.NombreArchivo ?? null  
                 })
                 .ToListAsync();
 
