@@ -20,15 +20,19 @@ namespace testback.Controllers
         [HttpPost("SubirDocumento")]
         public async Task<IActionResult> SubirDocumento([FromForm] SubirDocumentoDto dto)
         {
-            if (dto.Archivo == null || dto.Archivo.Length == 0)
-                return BadRequest("No se recibió ningún archivo");
-
             if (dto.FechaInicio > dto.FechaFin)
                 return BadRequest("La fecha de inicio no puede ser posterior a la fecha de fin.");
 
-            using var memoryStream = new MemoryStream();
-            await dto.Archivo.CopyToAsync(memoryStream);
-            var contenidoArchivo = memoryStream.ToArray();
+            byte[]? contenidoArchivo = null;
+            string? nombreArchivo = null;
+
+            if (dto.Archivo != null && dto.Archivo.Length > 0)
+            {
+                using var memoryStream = new MemoryStream();
+                await dto.Archivo.CopyToAsync(memoryStream);
+                contenidoArchivo = memoryStream.ToArray();
+                nombreArchivo = dto.Archivo.FileName;
+            }
 
             var documento = new DocumentoPermiso
             {
@@ -37,7 +41,7 @@ namespace testback.Controllers
                 FechaInicio = dto.FechaInicio,
                 FechaFin = dto.FechaFin,
                 Archivo = contenidoArchivo,
-                NombreArchivo = dto.Archivo.FileName
+                NombreArchivo = nombreArchivo
             };
 
             _context.DocumentoPermisos.Add(documento);
@@ -55,7 +59,6 @@ namespace testback.Controllers
         public async Task<ActionResult<DocumentoPermiso>> GetPorId(int id)
         {
             var documento = await _context.DocumentoPermisos.FindAsync(id);
-
             if (documento == null)
                 return NotFound();
 
@@ -66,7 +69,6 @@ namespace testback.Controllers
         public async Task<IActionResult> VerArchivo(int id)
         {
             var documento = await _context.DocumentoPermisos.FindAsync(id);
-
             if (documento == null || documento.Archivo == null)
                 return NotFound("Documento no encontrado o sin contenido.");
 
@@ -77,7 +79,6 @@ namespace testback.Controllers
         public async Task<IActionResult> DescargarArchivo(int id)
         {
             var documento = await _context.DocumentoPermisos.FindAsync(id);
-
             if (documento == null || documento.Archivo == null)
                 return NotFound("Documento no encontrado o sin contenido.");
 
@@ -102,7 +103,6 @@ namespace testback.Controllers
             await _context.SaveChangesAsync();
             return NoContent();
         }
-
 
         [HttpDelete("{id}")]
         public async Task<IActionResult> Eliminar(int id)

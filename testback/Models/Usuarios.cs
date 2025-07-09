@@ -23,8 +23,6 @@ namespace testback.Models
 
         [Required, StringLength(10)]
         public required string Estado { get; set; } = "Activo";
-
-        // FK a Obra, sin navegación inversa
         public int? ObraId { get; set; }
     }
 }
