@@ -107,8 +107,8 @@ namespace testback.Controllers
             if (existente == null)
                 return NotFound();
 
-            existente.NombreEmpleado = documento.NombreEmpleado;
-            existente.Comentarios = documento.Comentarios;
+            existente.NombreEmpleado = documento.NombreEmpleado ?? existente.NombreEmpleado;
+            existente.Comentarios = documento.Comentarios ?? existente.Comentarios;
             existente.FechaInicio = documento.FechaInicio;
             existente.FechaFin = documento.FechaFin;
 

@@ -14,7 +14,7 @@ namespace testback.Models
         public required DateTime FechaInicio { get; set; }
         [Required]
         public required DateTime FechaFin { get; set; }
-        public required byte[] Archivo { get; set; }
+        public byte[]? Archivo { get; set; }
         public required string NombreArchivo { get; set; }
     }
 }
