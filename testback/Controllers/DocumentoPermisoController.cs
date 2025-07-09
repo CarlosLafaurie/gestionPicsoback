@@ -50,9 +50,21 @@ namespace testback.Controllers
         }
 
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<DocumentoPermiso>>> GetTodos()
+        public async Task<ActionResult<IEnumerable<object>>> GetTodos()
         {
-            return await _context.DocumentoPermisos.ToListAsync();
+            var documentos = await _context.DocumentoPermisos
+                .Select(d => new
+                {
+                    d.Id,
+                    d.NombreEmpleado,
+                    d.Comentarios,
+                    d.FechaInicio,
+                    d.FechaFin,
+                    d.NombreArchivo
+                })
+                .ToListAsync();
+
+            return Ok(documentos);
         }
 
         [HttpGet("{id}")]
