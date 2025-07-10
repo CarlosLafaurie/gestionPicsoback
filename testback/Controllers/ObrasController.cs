@@ -22,9 +22,14 @@ namespace testback.Controllers
             var obras = await _context.Obra
                 .Where(o => o.Estado == "Activo")
                 .OrderByDescending(o => o.Id)
-                .AsNoTracking()
+                .ToListAsync();  // quitamos AsNoTracking para evitar problemas
+
+            // Cargar todos los usuarios en memoria una sola vez
+            var usuarios = await _context.Usuario
+                .Select(u => new { u.Id, u.NombreCompleto })
                 .ToListAsync();
 
+            // Armar DTO con nombre del responsable desde los datos cargados
             var dto = obras.Select(o => new
             {
                 o.Id,
@@ -34,10 +39,7 @@ namespace testback.Controllers
                 o.Estado,
                 o.Ubicacion,
                 o.ResponsableId,
-                ResponsableNombre = _context.Usuario
-                    .Where(u => u.Id == o.ResponsableId)
-                    .Select(u => u.NombreCompleto)
-                    .FirstOrDefault(),
+                ResponsableNombre = usuarios.FirstOrDefault(u => u.Id == o.ResponsableId)?.NombreCompleto,
                 o.ResponsableSecundario
             });
 
