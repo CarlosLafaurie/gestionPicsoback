@@ -7,9 +7,6 @@ namespace testback.Services
 {
     public class CalculadoraJornada
     {
-        private static readonly TimeSpan InicioDiurno = new TimeSpan(6, 0, 0);
-        private static readonly TimeSpan FinDiurno = new TimeSpan(21, 0, 0);
-
         public RegistroJornada CalcularRegistro(
             Empleado empleado,
             IngresosPersonal ingreso,
@@ -26,15 +23,22 @@ namespace testback.Services
                 TrabajoFestivo = diasFestivos.Contains(ingreso.FechaHoraEntrada.Date)
             };
 
-            // Descansos aplicables todos los días
+            if (salida.FechaHoraSalida <= ingreso.FechaHoraEntrada)
+            {
+                salida.FechaHoraSalida = salida.FechaHoraSalida.AddDays(1);
+            }
+
             var descansos = new List<(TimeSpan inicio, TimeSpan fin)>
             {
-                (new TimeSpan(9, 0, 0), new TimeSpan(9, 30, 0)),   // Desayuno
-                (new TimeSpan(13, 0, 0), new TimeSpan(14, 0, 0))   // Almuerzo
+                (new TimeSpan(9, 0, 0), new TimeSpan(9, 30, 0)),
+                (new TimeSpan(13, 0, 0), new TimeSpan(14, 0, 0))
             };
 
+            var InicioDiurno = new TimeSpan(6, 0, 0);
+            var FinDiurno = new TimeSpan(21, 0, 0);
+
             double diurnas = 0, nocturnas = 0, extrasDiurnas = 0, extrasNocturnas = 0;
-            double acumuladoDiurno = 0;
+            double horasAcumuladas = 0;
 
             DateTime cursor = ingreso.FechaHoraEntrada;
 
@@ -47,7 +51,6 @@ namespace testback.Services
                 var horaActual = cursor.TimeOfDay;
                 var horaSiguiente = next.TimeOfDay;
 
-                // Verificar si el bloque de 10 minutos está dentro de un descanso
                 bool enDescanso = descansos.Any(d =>
                     horaActual < d.fin && horaSiguiente > d.inicio);
 
@@ -58,24 +61,43 @@ namespace testback.Services
                 }
 
                 var tramoHoras = (next - cursor).TotalHours;
+
                 bool esDiurno = horaActual >= InicioDiurno && horaActual < FinDiurno;
 
                 if (esDiurno)
                 {
-                    var faltaPara8 = Math.Max(0, 8 - acumuladoDiurno);
-                    var hDiurna = Math.Min(tramoHoras, faltaPara8);
-                    var hExtraD = tramoHoras - hDiurna;
+                    if (horasAcumuladas < 8)
+                    {
+                        double faltanPara8 = 8 - horasAcumuladas;
+                        double normales = Math.Min(tramoHoras, faltanPara8);
+                        double extras = tramoHoras - normales;
 
-                    diurnas += hDiurna;
-                    extrasDiurnas += hExtraD;
-                    acumuladoDiurno += hDiurna;
+                        diurnas += normales;
+                        extrasDiurnas += extras;
+                    }
+                    else
+                    {
+                        extrasDiurnas += tramoHoras;
+                    }
                 }
-                else
+                else // nocturno
                 {
-                    nocturnas += tramoHoras;
-                    // Si deseas calcular extras nocturnas, podrías hacerlo aquí
+                    if (horasAcumuladas < 8)
+                    {
+                        double faltanPara8 = 8 - horasAcumuladas;
+                        double normales = Math.Min(tramoHoras, faltanPara8);
+                        double extras = tramoHoras - normales;
+
+                        nocturnas += normales;
+                        extrasNocturnas += extras;
+                    }
+                    else
+                    {
+                        extrasNocturnas += tramoHoras;
+                    }
                 }
 
+                horasAcumuladas += tramoHoras;
                 cursor = next;
             }
 
