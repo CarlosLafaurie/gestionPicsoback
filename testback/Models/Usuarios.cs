@@ -18,8 +18,7 @@ namespace testback.Models
         [Required]
         public required string Rol { get; set; }
 
-        [Required]
-        public required string ContrasenaHash { get; set; }
+        public string? ContrasenaHash { get; set; }
 
         [Required, StringLength(10)]
         public required string Estado { get; set; } = "Activo";
