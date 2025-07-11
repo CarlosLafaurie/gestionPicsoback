@@ -116,27 +116,28 @@ namespace testback.Controllers
         {
             if (id != u.Id) return BadRequest("ID no coincide.");
 
-            // 1) Buscamos el usuario original
             var orig = await _context.Usuario.FindAsync(id);
             if (orig == null) return NotFound();
 
-            // 2) Actualizamos los campos básicos
-            if (!BCrypt.Net.BCrypt.Verify(u.ContrasenaHash, orig.ContrasenaHash))
-                orig.ContrasenaHash = BCrypt.Net.BCrypt.HashPassword(u.ContrasenaHash);
             orig.Cedula = u.Cedula;
             orig.NombreCompleto = u.NombreCompleto;
             orig.Cargo = u.Cargo;
             orig.Rol = u.Rol;
             orig.Estado = u.Estado;
 
-            // 3) ¿Cambio de obra? Guardamos el anterior para despegarlo luego
+            if (!string.IsNullOrWhiteSpace(u.ContrasenaHash))
+            {
+                if (!BCrypt.Net.BCrypt.Verify(u.ContrasenaHash, orig.ContrasenaHash))
+                {
+                    orig.ContrasenaHash = BCrypt.Net.BCrypt.HashPassword(u.ContrasenaHash);
+                }
+            }
+
             var obraAnteriorId = orig.ObraId;
             orig.ObraId = u.ObraId;
 
-            // 4) Salvamos cambios en usuario
             await _context.SaveChangesAsync();
 
-            // 5) Si había obra anterior y era distinto, la “desasignamos”
             if (obraAnteriorId.HasValue && obraAnteriorId != u.ObraId)
             {
                 var vieja = await _context.Obra.FindAsync(obraAnteriorId.Value);
@@ -147,7 +148,6 @@ namespace testback.Controllers
                 }
             }
 
-            // 6) Si ahora tiene obra asignada, la enlazamos como responsable
             if (u.ObraId.HasValue)
             {
                 var obraNueva = await _context.Obra.FindAsync(u.ObraId.Value);
@@ -160,7 +160,6 @@ namespace testback.Controllers
 
             return Ok(new { orig.Id });
         }
-
 
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteUsuario(int id)
