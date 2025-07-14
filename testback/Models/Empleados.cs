@@ -23,4 +23,5 @@ public class Empleado
     public string? NumeroCuenta { get; set; }
     public DateTime FechaInicioContrato { get; set; }
     public DateTime FechaFinContrato { get; set; }
+    public string? Ubicacion { get; set; }
 }
