@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace testback.Models
 {
@@ -23,5 +24,7 @@ namespace testback.Models
         [Required, StringLength(10)]
         public required string Estado { get; set; } = "Activo";
         public int? ObraId { get; set; }
+        [NotMapped]
+        public string? TipoResponsabilidad { get; set; }
     }
 }

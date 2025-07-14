@@ -153,7 +153,15 @@ namespace testback.Controllers
                 var obraNueva = await _context.Obra.FindAsync(u.ObraId.Value);
                 if (obraNueva != null)
                 {
-                    obraNueva.ResponsableId = u.Id;
+                    if (u.TipoResponsabilidad?.ToLower() == "secundario")
+                    {
+                        obraNueva.ResponsableSecundario = u.NombreCompleto;
+                    }
+                    else
+                    {
+                        obraNueva.ResponsableId = u.Id;
+                    }
+
                     await _context.SaveChangesAsync();
                 }
             }
