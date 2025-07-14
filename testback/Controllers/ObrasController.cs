@@ -108,6 +108,8 @@ namespace testback.Controllers
             var orig = await _context.Obra.FindAsync(id);
             if (orig == null) return NotFound();
 
+            var nombreObraAnterior = orig.NombreObra;
+
             orig.NombreObra = o.NombreObra;
             orig.ClienteObra = o.ClienteObra;
             orig.CostoObra = o.CostoObra;
@@ -115,6 +117,26 @@ namespace testback.Controllers
             orig.Ubicacion = o.Ubicacion;
             orig.ResponsableId = o.ResponsableId;
             orig.ResponsableSecundario = o.ResponsableSecundario;
+
+            await _context.SaveChangesAsync();
+
+            string? nombreResponsable = null;
+            if (o.ResponsableId.HasValue)
+            {
+                var usuario = await _context.Usuario.FirstOrDefaultAsync(u => u.Id == o.ResponsableId.Value);
+                if (usuario != null)
+                    nombreResponsable = usuario.NombreCompleto;
+            }
+
+            var empleadosRelacionados = await _context.Empleado
+                .Where(e => e.Obra == o.NombreObra)
+                .ToListAsync();
+
+            foreach (var empleado in empleadosRelacionados)
+            {
+                empleado.Responsable = nombreResponsable ?? "Sin responsable";
+                empleado.ResponsableSecundario = o.ResponsableSecundario ?? "Sin responsable";
+            }
 
             await _context.SaveChangesAsync();
             return NoContent();
