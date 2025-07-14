@@ -21,10 +21,9 @@ namespace testback.Models
 
         [Required]
         public required string Ubicacion { get; set; }
-
-        // FK a Usuario, sin propiedad de navegación
         public int? ResponsableId { get; set; }
 
         public string? ResponsableSecundario { get; set; }
+        public int? tamano {  get; set; }
     }
 }
