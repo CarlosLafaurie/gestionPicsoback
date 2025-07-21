@@ -115,7 +115,6 @@ namespace testback.Controllers
             await _context.SaveChangesAsync();
             return Ok(model);
         }
-
         private bool RendimientoExists(int id)
         {
             return _context.Rendimiento.Any(r => r.Id == id);
