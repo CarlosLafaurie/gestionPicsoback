@@ -73,8 +73,7 @@ namespace testback.Controllers
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
 
-            if (model.Fecha == default)
-                model.Fecha = DateTime.UtcNow;
+            model.Fecha = DateTime.UtcNow.Date;  
 
             _context.Rendimiento.Add(model);
             await _context.SaveChangesAsync();

@@ -19,9 +19,11 @@ namespace testback.Models
         [Required]
         public decimal Cantidad { get; set; }
         [Required]
-        public DateTime Fecha { get; set; } = DateTime.UtcNow;
+        public DateTime Fecha { get; set; } = DateTime.UtcNow.Date;
         [MaxLength(1000)]
         public string Observaciones { get; set; } = string.Empty;
         public int? IdContratista { get; set; }
+        [Required]
+        public int ObraId { get; set; }
     }
 }
