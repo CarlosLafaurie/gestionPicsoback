@@ -46,6 +46,42 @@ namespace testback.Controllers
             return Ok(Unidades);
         }
 
+        [HttpGet("resumen-por-empleado")]
+        public async Task<IActionResult> ObtenerResumenPorEmpleado()
+        {
+            var resumenPlano = await _context.Rendimiento
+                .GroupBy(r => new { r.IdEmpleado, r.Actividad, r.Unidad })
+                .Select(g => new
+                {
+                    IdEmpleado = g.Key.IdEmpleado,
+                    Actividad = g.Key.Actividad,
+                    Unidad = g.Key.Unidad,
+                    TotalCantidad = g.Sum(r => r.Cantidad),
+                    TotalDias = g.Sum(r => r.Dias)
+                })
+                .ToListAsync();
+            var empleados = await _context.Empleado
+                .Where(e => resumenPlano.Select(r => r.IdEmpleado).Distinct().Contains(e.Id))
+                .ToDictionaryAsync(e => e.Id, e => e.NombreCompleto);
+            var resumenFinal = resumenPlano
+                .GroupBy(r => r.IdEmpleado)
+                .Select(g => new ResumenRendimiento
+                {
+                    IdEmpleado = g.Key,
+                    NombreEmpleado = empleados.ContainsKey(g.Key) ? empleados[g.Key] : "Desconocido",
+                    Actividades = g.Select(a => new ActividadResumen
+                    {
+                        Actividad = a.Actividad,
+                        Unidad = a.Unidad,
+                        TotalCantidad = a.TotalCantidad,
+                        TotalDias = a.TotalDias
+                    }).ToList()
+                })
+                .OrderBy(r => r.IdEmpleado)
+                .ToList();
+            return Ok(resumenFinal);
+        }
+
         [HttpGet]
         public async Task<IActionResult> GetRendimientos(int page = 1, int pageSize = 20)
         {
