@@ -60,15 +60,23 @@ namespace testback.Controllers
                     TotalDias = g.Sum(r => r.Dias)
                 })
                 .ToListAsync();
+
             var empleados = await _context.Empleado
                 .Where(e => resumenPlano.Select(r => r.IdEmpleado).Distinct().Contains(e.Id))
                 .ToDictionaryAsync(e => e.Id, e => e.NombreCompleto);
+
+           var obrasPorEmpleado = await _context.Rendimiento
+                .GroupBy(r => r.IdEmpleado)
+                .Select(g => new { IdEmpleado = g.Key, ObraId = g.Select(x => x.ObraId).FirstOrDefault() })
+                .ToDictionaryAsync(g => g.IdEmpleado, g => g.ObraId);
+
             var resumenFinal = resumenPlano
                 .GroupBy(r => r.IdEmpleado)
                 .Select(g => new ResumenRendimiento
                 {
                     IdEmpleado = g.Key,
                     NombreEmpleado = empleados.ContainsKey(g.Key) ? empleados[g.Key] : "Desconocido",
+                    ObraId = obrasPorEmpleado.ContainsKey(g.Key) ? obrasPorEmpleado[g.Key] : null,
                     Actividades = g.Select(a => new ActividadResumen
                     {
                         Actividad = a.Actividad,
@@ -79,6 +87,7 @@ namespace testback.Controllers
                 })
                 .OrderBy(r => r.IdEmpleado)
                 .ToList();
+
             return Ok(resumenFinal);
         }
 
