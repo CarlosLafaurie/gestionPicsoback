@@ -22,6 +22,7 @@ namespace testback.Data
         public DbSet<InventarioInterno> InventarioInterno { get; set; }
         public DbSet<RevisionInventario> RevisionInventario { get; set; }
         public DbSet<Rendimiento> Rendimiento { get; set; }
+        public DbSet<Contratista> Contratistas { get; set; }
 
 
         protected override void OnModelCreating(ModelBuilder builder)
