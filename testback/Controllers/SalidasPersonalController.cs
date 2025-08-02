@@ -70,6 +70,23 @@ namespace testback.Controllers
             return CreatedAtAction(nameof(GetSalida), new { id = salida.Id }, salida);
         }
 
+        [HttpPost("adicional")]
+        public async Task<IActionResult> RegistrarSalidaAdicional([FromBody] SalidasPersonal salida)
+        {
+            if (salida == null || salida.EmpleadoId <= 0)
+                return BadRequest("Datos de salida no válidos.");
+
+            try
+            {
+                _context.SalidasPersonal.Add(salida);
+                await _context.SaveChangesAsync();
+                return Ok("Salida adicional registrada correctamente.");
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Error al registrar salida adicional: {ex.Message}");
+            }
+        }
 
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdateSalida(int id, SalidasPersonal salida)

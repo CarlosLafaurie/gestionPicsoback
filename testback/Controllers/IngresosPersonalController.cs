@@ -10,7 +10,6 @@ namespace testback.Controllers
     public class IngresosPersonalController : ControllerBase
     {
         private readonly ApplicationDbContext _context;
-
         public IngresosPersonalController(ApplicationDbContext context)
         {
             _context = context;
@@ -70,6 +69,23 @@ namespace testback.Controllers
             return CreatedAtAction(nameof(GetIngreso), new { id = ingreso.Id }, ingreso);
         }
 
+        [HttpPost("adicional")]
+        public async Task<IActionResult> RegistrarIngresoAdicional([FromBody] IngresosPersonal ingreso)
+        {
+            if (ingreso == null || ingreso.EmpleadoId <= 0)
+                return BadRequest("Datos de ingreso no válidos.");
+
+            try
+            {
+                _context.IngresosPersonal.Add(ingreso);
+                await _context.SaveChangesAsync();
+                return Ok("Ingreso adicional registrado correctamente.");
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Error al registrar ingreso adicional: {ex.Message}");
+            }
+        }
 
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdateIngreso(int id, IngresosPersonal ingreso)
