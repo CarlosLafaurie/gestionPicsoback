@@ -1,4 +1,5 @@
-﻿using System;
+﻿// RegistroJornadaController.cs
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -34,53 +35,70 @@ namespace testback.Controllers
             [FromQuery] DateTime? fechaInicio = null,
             [FromQuery] DateTime? fechaFin = null)
         {
-            // Obtener datos base
             var empleados = await _context.Empleado.ToListAsync();
-            var ingresos = await _context.IngresosPersonal.ToListAsync();
-            var salidas = await _context.SalidasPersonal.ToListAsync();
+            var ingresosRaw = await _context.IngresosPersonal.ToListAsync();
+            var salidasRaw = await _context.SalidasPersonal.ToListAsync();
 
-            // Aplicar filtro de rango de fechas si se proporcionan
+            // Filtrar por rango de fechas
             if (fechaInicio.HasValue)
             {
-                ingresos = ingresos
+                ingresosRaw = ingresosRaw
                     .Where(i => i.FechaHoraEntrada.Date >= fechaInicio.Value.Date)
                     .ToList();
-                salidas = salidas
+                salidasRaw = salidasRaw
                     .Where(s => s.FechaHoraSalida.Date >= fechaInicio.Value.Date)
                     .ToList();
             }
             if (fechaFin.HasValue)
             {
-                ingresos = ingresos
+                ingresosRaw = ingresosRaw
                     .Where(i => i.FechaHoraEntrada.Date <= fechaFin.Value.Date)
                     .ToList();
-                salidas = salidas
+                salidasRaw = salidasRaw
                     .Where(s => s.FechaHoraSalida.Date <= fechaFin.Value.Date)
                     .ToList();
             }
 
-            // Obtener lista de festivos si aplica
+            // Festivos opcionales
             var festivos = usarFestivos
                 ? await _festivoService.ObtenerFestivosColombia(DateTime.Now.Year)
                 : new List<DateTime>();
 
-            // Calcular registros agrupados
             var resultados = new List<RegistroJornada>();
-            var grupos = ingresos.GroupBy(i => new { i.EmpleadoId, Fecha = i.FechaHoraEntrada.Date });
+
+            // Agrupo ingresos por empleado + fecha
+            var grupos = ingresosRaw
+                .GroupBy(i => new { i.EmpleadoId, Fecha = i.FechaHoraEntrada.Date });
 
             foreach (var g in grupos)
             {
-                var ingreso = g.OrderBy(i => i.FechaHoraEntrada).First();
-                var fecha = ingreso.FechaHoraEntrada.Date;
-                var salida = salidas
-                              .Where(s => s.EmpleadoId == ingreso.EmpleadoId
-                                        && s.FechaHoraSalida.Date == fecha)
-                              .OrderByDescending(s => s.FechaHoraSalida)
-                              .FirstOrDefault();
-                if (salida == null) continue;
+                int empleadoId = g.Key.EmpleadoId;
+                DateTime fecha = g.Key.Fecha;
 
-                var emp = empleados.First(e => e.Id == ingreso.EmpleadoId);
-                var reg = _calculadora.CalcularRegistro(emp, ingreso, salida, festivos);
+                // ** Listas de ingresos y salidas para este empleado+fecha **
+                var ingresosDelDia = g
+                    .OrderBy(i => i.FechaHoraEntrada)
+                    .ToList();
+
+                var salidasDelDia = salidasRaw
+                    .Where(s => s.EmpleadoId == empleadoId
+                             && s.FechaHoraSalida.Date == fecha)
+                    .OrderBy(s => s.FechaHoraSalida)
+                    .ToList();
+
+                if (!salidasDelDia.Any())
+                    continue;   // sin salidas, no calculamos
+
+                var emp = empleados.First(e => e.Id == empleadoId);
+
+                // Llamada a la calculadora usando listas
+                var reg = _calculadora.CalcularRegistro(
+                    emp,
+                    ingresosDelDia,
+                    salidasDelDia,
+                    festivos
+                );
+
                 resultados.Add(reg);
             }
 
