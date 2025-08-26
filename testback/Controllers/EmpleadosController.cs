@@ -129,6 +129,25 @@ public class EmpleadosController : ControllerBase
         return Ok(empleadosInactivos);
     }
 
+    [HttpGet("ubicaciones")]
+    public async Task<ActionResult<IEnumerable<string>>> GetUbicaciones()
+    {
+        var ubicaciones = await _context.Empleado
+            .Where(e => !string.IsNullOrEmpty(e.Ubicacion))
+            .Select(e => e.Ubicacion.Trim().ToLower()) 
+            .Distinct()
+            .ToListAsync();
+
+        var ubicacionesNormalizadas = ubicaciones
+            .Select(u => char.ToUpper(u[0]) + u.Substring(1))
+            .OrderBy(u => u) 
+            .ToList();
+
+        return Ok(ubicacionesNormalizadas);
+    }
+
+
+
     private bool EmpleadoExists(int id)
     {
         return (_context.Empleado?.Any(e => e.Id == id)).GetValueOrDefault();
