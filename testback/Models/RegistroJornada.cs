@@ -6,6 +6,8 @@ namespace testback.Models
     {
         public int Id { get; set; }               
         public string NombreCompleto { get; set; } = string.Empty;
+        required
+        public string Ubicacion { get; set; }
         public DateTime Fecha { get; set; }
         public DateTime HoraEntrada { get; set; }
         public DateTime HoraSalida { get; set; }

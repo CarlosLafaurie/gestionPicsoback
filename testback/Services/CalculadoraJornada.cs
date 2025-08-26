@@ -26,6 +26,7 @@ namespace testback.Services
             var reg = new RegistroJornada
             {
                 NombreCompleto = empleado.NombreCompleto,
+                Ubicacion = empleado.Ubicacion,
                 Fecha = fecha,
                 TrabajoDomingo = fecha.DayOfWeek == DayOfWeek.Sunday,
                 TrabajoFestivo = diasFestivos.Contains(fecha)
